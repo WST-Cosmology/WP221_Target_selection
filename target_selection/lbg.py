@@ -6,9 +6,9 @@ def refined_selection_fct(tab, conv):
     mask *= tab[conv['g_err']] > 0
     mask *= tab[conv['r_err']] > 0
 
-    mask *= tab[conv['u_err']] < 0.5
-    mask *= tab[conv['g_err']] < 0.5
-    mask *= tab[conv['r_err']] < 0.5
+    mask *= tab[conv['u_err']] < 1
+    mask *= tab[conv['g_err']] < 1
+    mask *= tab[conv['r_err']] < 1
 
     mask *= abs(tab[conv['u']] - tab[conv['g']])  < 10
     mask *= abs(tab[conv['g']] - tab[conv['r']])  < 10
@@ -18,10 +18,24 @@ def refined_selection_fct(tab, conv):
 def LBG_SELECTION(tab, conv, name='COSMOS_TMG_U'):
 
     if name=='COSMOS_TMG_U': return COSMOS_TMG_U(tab, conv)
+    if name=='XMMLSS_uS_dropout': return XMMLSS_uS_dropout(tab, conv)
     if name=='COSMOS_BXU_U': return COSMOS_BXU_U(tab, conv)
+    if name=='COSMOS_BXU_U_no_magr_cut': return  COSMOS_BXU_U_no_magr_cut(tab, conv)
     if name=='COSMOS_BXU_U_ext': return COSMOS_BXU_U_ext(tab, conv)
     if name=='COSMOS_BXU_U_ext_normagcut': return COSMOS_BXU_U_ext_normagcut(tab, conv)
     if name=='COSMOS_G': return COSMOS_G(tab, conv)
+
+def XMMLSS_uS_dropout(tab, conv):
+
+    mask = tab[conv['u']] - tab[conv['g']] > 0.3
+    mask *= (0 < tab[conv['g']] - tab[conv['r']]) * (tab[conv['g']] - tab[conv['r']] < 0.8)
+    
+    mask_1 = (tab[conv['u']] - tab[conv['g']] > 2.0*(tab[conv['g']] - tab[conv['r']]) + 0.42)
+    mask_2 = ((tab[conv['u']] - tab[conv['g']] > 1.6*(tab[conv['g']] - tab[conv['r']]) + 0.55))
+    mask *= (mask_1 + mask_2)
+    
+    mask *= (22.7 < tab[conv['r']]) * (tab[conv['r']] < 24.2) 
+    return mask
 
 def COSMOS_TMG_U_ext(tab, conv):
 
@@ -74,6 +88,14 @@ def COSMOS_BXU_U(tab, conv):
     mask_2 = ((tab[conv['u']] - tab[conv['g']] > 0.9) * (tab[conv['u']] - tab[conv['g']] > 1.6*(tab[conv['g']] - tab[conv['r']]) + 0.75))
     mask *= (mask_1 + mask_2)
     mask *= (23.75 < tab[conv['r']]) * (tab[conv['r']] < 24.5)
+    return mask
+
+def COSMOS_BXU_U_no_magr_cut(tab, conv):
+    mask = tab[conv['u']] - tab[conv['g']] > 0
+    mask *= (-0.5 < tab[conv['g']] - tab[conv['r']]) * (tab[conv['g']] - tab[conv['r']] < 1.2)
+    mask_1 = (tab[conv['u']] - tab[conv['g']]  > 2.2*(tab[conv['g']] - tab[conv['r']]) + 0.32)
+    mask_2 = ((tab[conv['u']] - tab[conv['g']] > 0.9) * (tab[conv['u']] - tab[conv['g']] > 1.6*(tab[conv['g']] - tab[conv['r']]) + 0.75))
+    mask *= (mask_1 + mask_2)
     return mask
 
 def COSMOS_G(tab, conv):
