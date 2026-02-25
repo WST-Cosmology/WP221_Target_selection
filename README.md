@@ -15,13 +15,6 @@ The scientific framework and reference forecasts are based on:
 > *The Wide-field Spectroscopic Telescope (WST) Science White Paper*  
 > arXiv:2403.05398 (2024)
 
-The repository covers:
-- Photometric catalog preparation  
-- Target selection implementation  
-- Redshift distribution modeling  
-- Forecast inputs (bias, clustering, efficiency)  
-- Survey design tools  
-
 ---
 
 # Repository Structure
@@ -31,14 +24,6 @@ The repository covers:
 ## photometric_catalogs/
 
 Preparation and manipulation of photometric datasets used for target selection.
-
-- `compute_COSMOS_XMM_surface.py` — Surface density calculations.
-- `degrade_photometry.py` — Simulate photometric depth degradation.
-- `example_degrading_CLAUDS-r_band.ipynb` — Example degradation workflow.
-- `explore_COSMOS.ipynb`, `explore_COSMOS_2.ipynb` — Catalog exploration.
-- `mask_catalogs.ipynb` — Mask construction and application.
-- `match_CLAUDSHSC_to_allWISE.ipynb` — Cross-matching workflow.
-- `matching_catalog.py` — Catalog matching utilities.
 
 ---
 
@@ -82,7 +67,7 @@ Tools and data products used for cosmological forecasting and tracer validation.
 
 ## (OLD) redshift_distribution_white_paper/
 
-Reference redshift distributions used in WST Science White Paper forecasts.
+Reference redshift distributions used in WST Science White Paper forecasts, and summarized in ["WST 221 Technical note"](https://docs.google.com/document/d/1RkDFxtx-Jb-XMQDaSXwRJVphXaIqcfKyYUigVJ7xyJw/edit?usp=sharing). 
 
 - `nz_wst_bg_bright.txt`
 - `nz_wst_bg_faint.txt`
