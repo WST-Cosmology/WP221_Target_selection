@@ -40,9 +40,9 @@ def COSMOS_G_noimagcut(tab, conv):
     return mask
 
 def COSMOS_R_nozmagcut(tab, conv):
-    mask = tab[conv['r']] - tab[conv['i']] > 1.7
+    mask = tab[conv['r']] - tab[conv['i']] > 1.5
     mask *= tab[conv['r']] - tab[conv['i']] < 5
-    mask *= ((tab[conv['r']] - tab[conv['i']]) > 1.6 * (tab[conv['i']] - tab[conv['z']]) + 1.2)
+    mask *= ((tab[conv['r']] - tab[conv['i']]) > 0.9 * (tab[conv['i']] - tab[conv['z']]) + 1.2)
     mask *= tab[conv['i']] - tab[conv['z']] < 1.5
     mask *= tab[conv['i']] - tab[conv['z']] > -0.5
     return mask
