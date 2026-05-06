@@ -6,18 +6,19 @@ def E_wst(redshift, mag, tracer = 'BG_faint'):
     if tracer == 'ELG': return E_wst_elg(redshift, mag)
     if tracer == 'LRG': return E_wst_lrg(redshift, mag)
     if tracer == 'QSO': return E_wst_qso(redshift, mag)
-    if tracer == 'LBGu': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=0.8, dropout_band = 'u', return_magnitudes=False)
-    if tracer == 'LBGg': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.6, plateau=0.8, dropout_band = 'g', return_magnitudes=False)
-    if tracer == 'LBGr': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.6, plateau=0.8, dropout_band = 'r', return_magnitudes=False)
+    if tracer == 'LBGu': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=1, dropout_band = 'u', return_magnitudes=False)
+    if tracer == 'LBGg': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.6, plateau=1, dropout_band = 'g', return_magnitudes=False)
+    if tracer == 'LBGr': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.6, plateau=1, dropout_band = 'r', return_magnitudes=False)
+        
 def n_pass_wst(redshift, mag, tracer = 'BG_faint'):
     if tracer == 'BG_faint': return n_pass_wst_bg_faint(redshift, mag)
     if tracer == 'BG_bright': return n_pass_wst_bg_bright(redshift, mag)
     if tracer == 'ELG': return n_pass_wst_elg(redshift, mag)
     if tracer == 'LRG': return n_pass_wst_lrg(redshift, mag)
     if tracer == 'QSO': return n_pass_wst_qso(redshift, mag)
-    if tracer == 'LBGu': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.7,plateau=0.8,dropout_band='u')
-    if tracer == 'LBGg': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.6,plateau=0.8,dropout_band='g')
-    if tracer == 'LBGr': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.6, plateau=0.8, dropout_band='r')
+    if tracer == 'LBGu': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.7,plateau=1,dropout_band='u')
+    if tracer == 'LBGg': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.6,plateau=1,dropout_band='g')
+    if tracer == 'LBGr': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.6, plateau=1, dropout_band='r')
 
 ### BG (bright, faint) ####
 def E_wst_bg_bright(redshift, mag):
@@ -50,7 +51,7 @@ def n_pass_wst_lrg(redshift,mag):
 ########## QSO ###########
 def E_wst_qso(redshift, mag):
     # Mg II enters DESI range at z ~ 0.3
-    return 0.70 * (redshift > 0.3)
+    return 0.75 * (redshift > 0.3)
 def n_pass_wst_qso(redshift,mag):
     n = np.ones(len(mag)) 
     return n
@@ -59,7 +60,8 @@ def n_pass_wst_qso(redshift,mag):
 def E_mse_udrop_single_exp(m): 
     return np.maximum((-0.18*m + 4.8), 0)
 def E_desi_udrop_single_exp(m): 
-    return np.maximum(-0.2*(m-23.5) + 0.75, 0)
+    #return np.maximum(-0.2*(m-23.5) + 0.75, 0)
+    return np.maximum(0.8 - 0.01*(m-24),0)
     
 def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'mse'):
 
@@ -72,7 +74,7 @@ def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'mse'):
         SMSE = 11.25**2
         alpha = np.sqrt(texp * SWST)/np.sqrt(tMSE * SMSE)
     if reference=='desi':
-        tDESI= 2*60*60 #Dark time WST
+        tDESI= 2 * 60 * 60 #Dark time WST
         SDESI = 3.8**2 #Surface of MSE mirror
         alpha = np.sqrt(texp * SWST)/np.sqrt(tDESI * SDESI)
     
@@ -86,7 +88,11 @@ def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'mse'):
     ratio = D_zu / D_zx
     shifted_m = mag -5 * np.log10(ratio)
 
-    efficency = (ratio ** 2) * alpha * E_mse_udrop_single_exp(shifted_m) 
+    efficency = (ratio ** 2) * alpha 
+    if reference == 'desi':
+        efficency *= E_desi_udrop_single_exp(shifted_m) 
+    if reference == 'mse':
+        efficency *= E_mse_udrop_single_exp(shifted_m) 
     #if dropout_band == 'u':
     efficency *= f(redshift)
     return efficency

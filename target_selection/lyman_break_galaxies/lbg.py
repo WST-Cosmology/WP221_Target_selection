@@ -34,8 +34,8 @@ def COSMOS_BXU_U_normagcut(tab, conv):
     return mask
 
 def COSMOS_G_noimagcut(tab, conv):
-    mask = tab[conv['g']] - tab[conv['r']] > 1.
-    mask *= (-1.5 < tab[conv['r']] - tab[conv['i']]) * (tab[conv['r']] - tab[conv['i']] < 1.)
+    mask = tab[conv['g']] - tab[conv['r']] > 1.1
+    mask *= (-1 < tab[conv['r']] - tab[conv['i']]) * (tab[conv['r']] - tab[conv['i']] < 1.)
     mask *= (tab[conv['g']] - tab[conv['r']] > 1.5*(tab[conv['r']] - tab[conv['i']]) + 0.8) 
     return mask
 
