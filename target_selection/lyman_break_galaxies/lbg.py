@@ -34,17 +34,25 @@ def COSMOS_BXU_U_normagcut(tab, conv):
     return mask
 
 def COSMOS_G_noimagcut(tab, conv):
-    mask = tab[conv['g']] - tab[conv['r']] > 1.1
-    mask *= (-1 < tab[conv['r']] - tab[conv['i']]) * (tab[conv['r']] - tab[conv['i']] < 1.)
+    mask = tab[conv['g']] - tab[conv['r']] > 1
+    mask *= (tab[conv['r']] - tab[conv['i']] < 1)
     mask *= (tab[conv['g']] - tab[conv['r']] > 1.5*(tab[conv['r']] - tab[conv['i']]) + 0.8) 
     return mask
 
+#def COSMOS_R_nozmagcut(tab, conv):
+#    mask = tab[conv['r']] - tab[conv['i']] > 1.5
+#    mask *= tab[conv['r']] - tab[conv['i']] < 5
+#    mask *= ((tab[conv['r']] - tab[conv['i']]) > 0.9 * (tab[conv['i']] - tab[conv['z']]) + 1.2)
+#    mask *= tab[conv['i']] - tab[conv['z']] < 1.5
+#    mask *= tab[conv['i']] - tab[conv['z']] > -0.5
+#    return mask
+
 def COSMOS_R_nozmagcut(tab, conv):
     mask = tab[conv['r']] - tab[conv['i']] > 1.5
-    mask *= tab[conv['r']] - tab[conv['i']] < 5
-    mask *= ((tab[conv['r']] - tab[conv['i']]) > 0.9 * (tab[conv['i']] - tab[conv['z']]) + 1.2)
-    mask *= tab[conv['i']] - tab[conv['z']] < 1.5
-    mask *= tab[conv['i']] - tab[conv['z']] > -0.5
+    #mask *= tab[conv['r']] - tab[conv['i']] < 
+    mask *= ((tab[conv['r']] - tab[conv['i']]) > 1.5 * (tab[conv['i']] - tab[conv['z']]) + 1)
+    mask *= tab[conv['i']] - tab[conv['z']] < 0.7
+    #mask *= tab[conv['i']] - tab[conv['z']] > -0.5
     return mask
     
 def XMMLSS_uS_dropout_normagcut(tab, conv):
