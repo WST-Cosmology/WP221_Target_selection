@@ -4,7 +4,10 @@ Authors: WST Cosmology Work Package 2.2.1 "Target Selection and Survey Design" (
 
 This repository compiles and documents the different target selection strategies for the main cosmological tracers (BGS, ELG, LRG, QSO and LBG) in the context of the Wide-Field Spectroscopic Telescope (WST). It presents also the work conducted about the ["Wide-Field Spectroscopic Telescope"](https://wstelescope.eu) survey design and associated cosmological forecasts.
 
-The scientific framework of this work is based on ["The Wide-field Spectroscopic Telescope (WST) Science White Paper"](https://arxiv.org/abs/2403.05398). The Reference redshift distributions used in WST Science White Paper forecasts, and summarized in the ["WST 221 Technical note"](https://docs.google.com/document/d/1RkDFxtx-Jb-XMQDaSXwRJVphXaIqcfKyYUigVJ7xyJw/edit?usp=sharing). 
+The scientific framework of this work is based on ["The Wide-field Spectroscopic Telescope (WST) Science White Paper"](https://arxiv.org/abs/2403.05398). Here below are few WST WP 2.2.1 Technical notes:
+
+- September 2025: ["Baseline redshift distribution and number densities"](https://docs.google.com/document/d/1RkDFxtx-Jb-XMQDaSXwRJVphXaIqcfKyYUigVJ7xyJw/edit?usp=sharing)
+- May 2026: 
 
 # Recquirements
 This repository has the following dependencies:
