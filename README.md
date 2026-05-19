@@ -7,7 +7,7 @@ This repository compiles and documents the different target selection strategies
 The scientific framework of this work is based on ["The Wide-field Spectroscopic Telescope (WST) Science White Paper"](https://arxiv.org/abs/2403.05398). Here below are few WST WP 2.2.1 Technical notes:
 
 - September 2025: ["Baseline redshift distribution and number densities"](https://docs.google.com/document/d/1RkDFxtx-Jb-XMQDaSXwRJVphXaIqcfKyYUigVJ7xyJw/edit?usp=sharing)
-- May 2026: 
+- May 2026: ["WST Cosmology Survey Plan: mock catalogs and Figure-of-Merit"](https://docs.google.com/document/d/1zy7uMPbcOIDLUH4iWJov12lSyW5J1JmdRPjLCxWbzw4/edit?usp=sharing)
 
 # Recquirements
 This repository has the following dependencies:
