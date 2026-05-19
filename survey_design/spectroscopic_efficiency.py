@@ -51,7 +51,7 @@ def n_pass_wst_lrg(redshift,mag):
 ########## QSO ###########
 def E_wst_qso(redshift, mag):
     # Mg II enters DESI range at z ~ 0.3
-    return 0.75 * (redshift > 0.3)
+    return (redshift > 0.3)
 def n_pass_wst_qso(redshift,mag):
     n = np.ones(len(mag)) 
     return n
@@ -60,10 +60,10 @@ def n_pass_wst_qso(redshift,mag):
 def E_mse_udrop_single_exp(m): 
     return np.maximum((-0.18*m + 4.8), 0)
 def E_desi_udrop_single_exp(m): 
-    #return np.maximum(-0.2*(m-23.5) + 0.75, 0)
-    return np.maximum(0.8 - 0.01*(m-24),0)
+    return np.maximum(-0.2*(m-23.5) + 0.75, 0)
+    #return np.maximum(0.8 - 0.01*(m-24),0)
     
-def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'mse'):
+def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'desi'):
 
     Dz_ugr = [6, 7, 8] # Mpc
 
