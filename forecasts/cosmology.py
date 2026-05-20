@@ -89,3 +89,7 @@ def deltab_test(k,fNL,bg,p,mod,z, cosmo):
         Omega_m=cosmo['Omega_m']
         h = cosmo['h']
         return 3*fNL*(bg-p)*deltac*Omega_m/(k**2*T(k,mod,cosmo)*D(z,cosmo))*(100*h/c_ls)**2
+
+
+def hello():
+    print('hello')
