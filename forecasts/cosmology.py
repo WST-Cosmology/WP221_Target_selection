@@ -30,18 +30,20 @@ def f(z, cosmo):
     return ccl.growth_rate(cosmo,1/(1+z))
 
 def Pm(k,z1, cosmo):
+    h = cosmo['h']
     return ccl.linear_matter_power(cosmo, k*h, 1/(1+z1))*h**3
 
 def Pz0(k, cosmo):
-     return ccl.linear_matter_power(cosmo, k*h, 1/(1+0))*h**3
+    h = cosmo['h']
+    return ccl.linear_matter_power(cosmo, k*h, 1/(1+0))*h**3
  
 def sigma_8(z1, cosmo):
-     return (Pm(0.01,z1)/Pz0(0.01))**0.5*ccl.sigma8(cosmo)
+     return (Pm(0.01,z1,cosmo)/Pz0(0.01,cosmo))**0.5*ccl.sigma8(cosmo)
  
 def sigma_chi(z, cosmo):
     sigma_z=0.001
     h = cosmo['h']
-    return c*(1+z)/(ccl.h_over_h0(cosmo,1/(1+z))*h*100)*sigma_z/(1+z)
+    return c_ls*(1+z)/(ccl.h_over_h0(cosmo,1/(1+z))*h*100)*sigma_z/(1+z)
         
 def Dl(z, cosmo):
     return ccl.background.luminosity_distance(cosmo, 1/(1+z))
