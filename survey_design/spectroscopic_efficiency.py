@@ -51,7 +51,7 @@ def n_pass_wst_lrg(redshift,mag):
 ########## QSO ###########
 def E_wst_qso(redshift, mag):
     # Mg II enters DESI range at z ~ 0.3
-    return (redshift > 0.3)
+    return 0.7*(redshift > 0.0)
 def n_pass_wst_qso(redshift,mag):
     n = np.ones(len(mag)) 
     return n
