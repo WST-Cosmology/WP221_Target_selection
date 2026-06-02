@@ -103,7 +103,7 @@ def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None):
     eps=0.0001
     dz_array=(zarray[1]-zarray[0])
     Nbin= int((zarray[-1]+dz_array-zarray[0]+eps)//Deltaz)
-    print(Nbin,' bins')
+    #print(Nbin,' bins')
     
     list_zbin=[]
     list_sigma_Da=[]
@@ -120,7 +120,7 @@ def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None):
         if nzsum>0: #if they are galaxies for this bin, let's do a forecast 
             
             zbin=(zarray[imin]-dz_array/2+Deltaz/2)
-            print(round(zbin,2),' zbin')
+            #print(round(zbin,2),' zbin')
             Vsur=cosmology.Vsurvey(zbin-Deltaz/2,Deltaz,Area,cosmo)
             
             bg=np.sum(nz[imin:imax]*bz[imin:imax])/np.sum(nz[imin:imax])

@@ -174,7 +174,7 @@ def sigma_fnl_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2,p=1,mod='camb',
     eps=0.0001
     dz_array=(zarray[1]-zarray[0])
     Nbin= int((zarray[-1]+dz_array-zarray[0]+eps)//Deltaz)
-    print(Nbin,' bins')
+    #print(Nbin,' bins')
     
     list_zbin=[]
     list_sigma_fnl=[]
@@ -190,7 +190,7 @@ def sigma_fnl_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2,p=1,mod='camb',
         if nzsum>0: #if they are galaxies for this bin, let's do a forecast 
             #print(imin,imax)
             zbin=(zarray[imin]-dz_array/2+Deltaz/2)
-            print(round(zbin,2),' zbin')
+            #print(round(zbin,2),' zbin')
             Vsur=cosmology.Vsurvey(zbin-Deltaz/2,Deltaz,Area,cosmo)
             #print(Vsur, ' Vsur')
             kmin=2*math.pi/Vsur**(1/3)
@@ -204,7 +204,7 @@ def sigma_fnl_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2,p=1,mod='camb',
             F=Mat_Fisher_1tracer_fnl_bias(n,bg,zbin,p,Vsur,kmin,kmax,mod,cosmo=cosmo)
             Flist.append(F)
             list_sigma_fnl.append((np.linalg.inv(F)[0][0])**0.5)
-        
+
     zeff=np.sum(zarray*nz)
     Flist=np.array(Flist)
     Ftot=np.sum(Flist,axis=0)
