@@ -37,6 +37,11 @@ def save_targets(
     selection=None,
     add_name_selection="",
     info_about_the_sample="",
+    Z_EDGES=Z_EDGES,
+    MAG_EDGES=MAG_EDGES,
+    Z_MID=Z_MID,
+    MAG_MID=MAG_MID,
+    BINS=BINS
 ):
     """
     Compute a 2D histogram in (z, magnitude) and save it to disk.
