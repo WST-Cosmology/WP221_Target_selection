@@ -58,6 +58,7 @@ def plot_diagnostics(config_survey_update, max_mag = None):
 
     plt.subplot(144)
     for j, tracer in enumerate(config_survey_update['tracers']):
+
         index = np.argmin(abs(config_survey_update[tracer + '_' + 'mag_centers'] - max_mag[j]))
         n = config_survey_update[tracer + '_' + 'spec_density'][index]
         z, x = config_survey_update[tracer + '_' + 'redshift_centers'], config_survey_update[tracer + '_' + 'spec_redshift_density'][index]
@@ -70,7 +71,7 @@ def plot_diagnostics(config_survey_update, max_mag = None):
     plt.xlabel('redshift', fontsize=12)
     plt.legend()
 
-def Survey_design_telescope_metrics(config_survey, max_mag = None):
+def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, max_mag = None):
 
     S_survey = config_survey['S_survey']
     N_fibres = config_survey['N_fibres']
@@ -85,17 +86,19 @@ def Survey_design_telescope_metrics(config_survey, max_mag = None):
         n_target_count = N_zm['object_count'] / N_zm['surface_deg2']
         Efficiency = np.zeros([len(z_centers), len(mag_centers)])
         n_pass = np.zeros([len(z_centers), len(mag_centers)])
-        for i, z in enumerate(z_centers):
-            Efficiency[i,:] = tracer_spectroscopic_efficiency.E_wst(z, mag_centers, tracer = tracer)
-            n_pass[i,:] = tracer_spectroscopic_efficiency.n_pass_wst(z, mag_centers, tracer = tracer)
+        for j, z in enumerate(z_centers):
+            Efficiency[j,:] = tracer_spectroscopic_efficiency.E_wst(z, mag_centers, tracer = tracer)
+            n_pass[j,:] = tracer_spectroscopic_efficiency.n_pass_wst(z, mag_centers, tracer = tracer)
 
         n_pointings = []
         n_target = []
         n_spec = []
         n_specz_redshift = []
         n_target_redshift = []
+
+        mask_mag_max_eval_range = (mag_centers >= mag_max_eval_range[i][0])*(mag_centers <= mag_max_eval_range[i][1]) 
         
-        for m in mag_centers:
+        for m in np.array(mag_centers)[mask_mag_max_eval_range]:
             n_target.append(np.sum(np.sum(n_target_count[:, mag_centers <= m], axis=1), axis=0))
             n_spec.append(np.sum(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), axis=0))
             n_pointings.append(np.sum(np.sum((n_target_count * n_pass)[:, mag_centers <= m], axis=1), axis=0))
@@ -106,9 +109,11 @@ def Survey_design_telescope_metrics(config_survey, max_mag = None):
         config_survey_update[tracer + '_' + 'spec_redshift_density'] = np.array(n_specz_redshift)
         config_survey_update[tracer + '_' + 'target_redshift_density'] = np.array(n_target_redshift)
         config_survey_update[tracer + '_' + 'target_pointings'] = np.array(n_pointings)
-        config_survey_update[tracer + '_' + 'fibre_time'] = np.array(n_pointings) * t_exp * (S_survey / N_fibres) / (365.25 * 24 * 3600)
+        N_pointings = np.array(n_pointings) * S_survey
+        Total_time = N_pointings * t_exp 
+        config_survey_update[tracer + '_' + 'fibre_time'] = Total_time / (N_fibres * 365.25 * 24 * 3600) #in years
         config_survey_update[tracer + '_' + 'calendar_time'] = config_survey_update[tracer + '_' + 'fibre_time'] / observational_fraction
-        config_survey_update[tracer + '_' + 'mag_centers'] = np.array(mag_centers)
+        config_survey_update[tracer + '_' + 'mag_centers'] = np.array(mag_centers)[mask_mag_max_eval_range]
         config_survey_update[tracer + '_' + 'redshift_centers'] = np.array(z_centers)
 
     if max_mag != None:
@@ -116,20 +121,13 @@ def Survey_design_telescope_metrics(config_survey, max_mag = None):
         print(' After a maximum number of passes, the survey is said complete ')
         time = 0
         n_pointings = 0
-        t_full_sky_one_exp = t_exp * (S_survey / S_FoV)
+        t_full_sky_one_exp = t_exp * (S_survey / S_FoV) #Number of tiles * time for one exposure
         for j, tracer in enumerate(config_survey_update['tracers']):
             index = np.argmin(abs(config_survey_update[tracer + '_' + 'mag_centers'] - max_mag[j]))
             n_pointings += config_survey_update[tracer + '_' + 'target_pointings'][index]
     
         n_fibres= N_fibres/S_FoV #density of fibres
-        n, cumulative, Xremaining, nleft = passes_needed(n_pointings, n_fibres, n_pointings, max_passes=2000, poiss=True)
-
-        number_passes, completeness = [], []
-        for j in range(1,len(nleft)):
-            comp = 1 - nleft[j]/n_pointings
-            completeness.append(comp)
-            number_passes.append(j)
-            if comp > 0.999: continue
+        completeness, number_passes = completeness_vs_pass(n_pointings, n_fibres)
 
         config_survey_update['total_number_of_passes'] = np.array(number_passes)
         config_survey_update['total_survey_completeness'] = np.array(completeness)
@@ -139,9 +137,17 @@ def Survey_design_telescope_metrics(config_survey, max_mag = None):
     return config_survey_update
 
 
+def completeness_vs_pass(n_pointings, n_fibres):
 
-
-
+    n, cumulative, Xremaining, nleft = passes_needed(n_pointings, n_fibres, n_pointings, max_passes=2000, poiss=True)
+    
+    number_passes, completeness = [], []
+    for j in range(1,len(nleft)):
+        comp = 1 - nleft[j]/n_pointings
+        completeness.append(comp)
+        number_passes.append(j)
+        if comp > 0.999: continue
+    return completeness, number_passes
 
 
 

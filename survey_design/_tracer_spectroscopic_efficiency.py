@@ -6,9 +6,9 @@ def E_wst(redshift, mag, tracer = 'BG_faint'):
     if tracer == 'ELG': return E_wst_elg(redshift, mag)
     if tracer == 'LRG': return E_wst_lrg(redshift, mag)
     if tracer == 'QSO': return E_wst_qso(redshift, mag)
-    if tracer == 'LBGu': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=1, dropout_band = 'u', return_magnitudes=False)
-    if tracer == 'LBGg': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.6, plateau=1, dropout_band = 'g', return_magnitudes=False)
-    if tracer == 'LBGr': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.6, plateau=1, dropout_band = 'r', return_magnitudes=False)
+    if tracer == 'LBGu': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.9, plateau=1, dropout_band = 'u', return_magnitudes=False)
+    if tracer == 'LBGg': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.8, plateau=1, dropout_band = 'g', return_magnitudes=False)
+    if tracer == 'LBGr': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=1, dropout_band = 'r', return_magnitudes=False)
         
 def n_pass_wst(redshift, mag, tracer = 'BG_faint'):
     if tracer == 'BG_faint': return n_pass_wst_bg_faint(redshift, mag)
@@ -16,9 +16,9 @@ def n_pass_wst(redshift, mag, tracer = 'BG_faint'):
     if tracer == 'ELG': return n_pass_wst_elg(redshift, mag)
     if tracer == 'LRG': return n_pass_wst_lrg(redshift, mag)
     if tracer == 'QSO': return n_pass_wst_qso(redshift, mag)
-    if tracer == 'LBGu': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.7,plateau=1,dropout_band='u')
-    if tracer == 'LBGg': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.6,plateau=1,dropout_band='g')
-    if tracer == 'LBGr': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.6, plateau=1, dropout_band='r')
+    if tracer == 'LBGu': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.9,plateau=1,dropout_band='u')
+    if tracer == 'LBGg': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.8,plateau=1,dropout_band='g')
+    if tracer == 'LBGr': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.7, plateau=1, dropout_band='r')
 
 ### BG (bright, faint) ####
 def E_wst_bg_bright(redshift, mag):
@@ -57,15 +57,16 @@ def n_pass_wst_qso(redshift,mag):
     return n
 
 ########## LBG ##########
-def E_mse_udrop_single_exp(m): 
-    return np.maximum((-0.18*m + 4.8), 0)
-def E_desi_udrop_single_exp(m): 
-    return np.maximum(-0.2*(m-23.5) + 0.75, 0)
+def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'desi', number_of_passes = 1):
+
+    def E_mse_udrop_single_exp(m): 
+        return np.maximum((-0.18*m + 4.8), 0)
+    def E_desi_udrop_single_exp(m): 
+        return np.maximum(-0.2*(m-23.5) + 0.75, 0)
     #return np.maximum(0.8 - 0.01*(m-24),0)
-    
-def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'desi'):
 
     Dz_ugr = [6, 7, 8] # Mpc
+    z_mean_ugr = [3, 4, 5]
 
     texp = 1000 #Dark time WST
     SWST=12**2 #Surface of WST mirror
@@ -77,31 +78,30 @@ def E_wst_lbg_dropout(redshift, mag, dropout_band = 'u', reference = 'desi'):
         tDESI= 2 * 60 * 60 #Dark time WST
         SDESI = 3.8**2 #Surface of MSE mirror
         alpha = np.sqrt(texp * SWST)/np.sqrt(tDESI * SDESI)
-    
+    Delta_m_ref_to_wst = 2.5*np.log10(alpha)
+    Dz_u = Dz_ugr[0]
+    z_mean_u = z_mean_ugr[0]
+    if dropout_band=='u': Dz_X, z_mean_X = Dz_ugr[0], z_mean_ugr[0]
+    if dropout_band=='g': Dz_X, z_mean_X = Dz_ugr[1], z_mean_ugr[1]
+    if dropout_band=='r': Dz_X, z_mean_X = Dz_ugr[2], z_mean_ugr[2]
+
+    alpha_drop = ((1 + z_mean_u) * Dz_u **2)/((1 + z_mean_X) * Dz_X **2)
+    Delta_m_udrop_to_Xdrop = 2.5*np.log10(alpha_drop)
+
+    Delta_m_number_of_passes = 2.5*np.log10(np.sqrt(number_of_passes))
+
     def f(z, k=20): return 1 / (1 + np.exp(-k * (z - 2.5)))
-        
-    D_zu = Dz_ugr[0]
-    if dropout_band == 'u': D_zx = Dz_ugr[0]
-    if dropout_band == 'g': D_zx = Dz_ugr[1]
-    if dropout_band == 'r': D_zx = Dz_ugr[2]
 
-    ratio = D_zu / D_zx
-    shifted_m = mag -5 * np.log10(ratio)
-
-    efficency = (ratio ** 2) * alpha 
     if reference == 'desi':
-        efficency *= E_desi_udrop_single_exp(shifted_m) 
+        return f(redshift) * E_desi_udrop_single_exp(mag - Delta_m_ref_to_wst - Delta_m_udrop_to_Xdrop - Delta_m_number_of_passes)
     if reference == 'mse':
-        efficency *= E_mse_udrop_single_exp(shifted_m) 
-    #if dropout_band == 'u':
-    efficency *= f(redshift)
-    return efficency
+        return f(redshift) * E_mse_udrop_single_exp(mag - Delta_m_ref_to_wst - Delta_m_udrop_to_Xdrop - Delta_m_number_of_passes)
 
 def E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=0.8, dropout_band = 'u', return_magnitudes=False):
 
-    E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-    E2 = np.minimum(np.sqrt(2)*E1, plateau)
-    E3 = np.minimum(np.sqrt(3)*E1, plateau)
+    E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band, number_of_passes=1), plateau)
+    E2 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band, number_of_passes=2), plateau)
+    E3 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band, number_of_passes=3), plateau)
 
     m1 = mag[np.argmin(np.abs(E1 - p_min))]
     m2 = mag[np.argmin(np.abs(E2 - p_min))]
@@ -114,17 +114,15 @@ def E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=0.8, dropout_b
 def n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.7,plateau=0.8,dropout_band='u'):
 
     # cumulative efficiencies
-    E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-    E2 = np.minimum(np.sqrt(2)*E1, plateau)
-    E3 = np.minimum(np.sqrt(3)*E1, plateau)
+    E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band, number_of_passes=1), plateau)
+    E2 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band, number_of_passes=2), plateau)
+    E3 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band, number_of_passes=3), plateau)
 
     # transition magnitudes
     m1 = mag[np.argmin(np.abs(E1 - p_min))]
     m2 = mag[np.argmin(np.abs(E2 - p_min))]
     m3 = 30
 
-    # conditional probabilities
-    # probability that it succeeds 2nd try, knowing it failed first try
     p2 = np.zeros_like(E1)
     mask = (1 - E1) > 0
     p2[mask] = (E2[mask] - E1[mask]) / (1 - E1[mask])
@@ -149,63 +147,97 @@ def n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.7,plateau=0.8,dropout_
 
     return n
 
-def E_wst_lbg_dropout_piecewise_wdassignies(redshift, mag, p_min=0.7, plateau=0.8, dropout_band = 'u', return_magnitudes=False):
+# def E_wst_lbg_dropout_old(redshift, mag, dropout_band = 'u', reference = 'desi'):
 
-    E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-    E2 = np.minimum(np.sqrt(2)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-    E3 = np.minimum(np.sqrt(3)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+#     Dz_ugr = [6, 7, 8] # Mpc
 
-    p2 = (E2 - E1)/(1-E1)
-    p3 = (E3 - E2)/(1-E2)
-
-    eta_2_unclip = (p_min - E1)/(p2 * (1 - E1))
-    eta_3_unclip = (p_min - E2)/(p3 * (1 - E2))
-    eta_2 = np.clip(eta_2_unclip, 0, 1)
-    eta_3 = np.clip(eta_3_unclip, 0, 1)
-
-    m1 = mag[np.argmin(np.abs(E1 - p_min))]
-    m2 = mag[np.argmin(np.abs(eta_2_unclip - 1))]
-    m3 = mag[np.argmin(np.abs(eta_3_unclip - 1))]
-
-    E = np.zeros(len(mag))
-    E[mag <= m1] = E1[mag <= m1]
-    E[(mag > m1)*(mag <= m2)] = (E1 + eta_2 * p2 * (1-E1) )[(mag > m1)*(mag <= m2)]
-    E[(mag > m2)*(mag <= m3)] = (E2 + eta_3 * p3 * (1-E2) )[(mag > m2)*(mag <= m3)]
-    E[(mag > m3)] = E3[(mag > m3)]
-    return E
+#     texp = 1000 #Dark time WST
+#     SWST=12**2 #Surface of WST mirror
+#     if reference=='mse':
+#         tMSE = 1800 #MSE time
+#         SMSE = 11.25**2
+#         alpha = np.sqrt(texp * SWST)/np.sqrt(tMSE * SMSE)
+#     if reference=='desi':
+#         tDESI= 2 * 60 * 60 #Dark time WST
+#         SDESI = 3.8**2 #Surface of MSE mirror
+#         alpha = np.sqrt(texp * SWST)/np.sqrt(tDESI * SDESI)
     
-def n_pass_wst_lbg_dropout_piecewise_wdassignies(redshift, mag, p_min=0.7, plateau=0.8, dropout_band='u'):
+#     def f(z, k=20): return 1 / (1 + np.exp(-k * (z - 2.5)))
+        
+#     D_zu = Dz_ugr[0]
+#     if dropout_band == 'u': D_zx = Dz_ugr[0]
+#     if dropout_band == 'g': D_zx = Dz_ugr[1]
+#     if dropout_band == 'r': D_zx = Dz_ugr[2]
+
+#     ratio = D_zu / D_zx
+#     shifted_m = mag -5 * np.log10(ratio)
+
+#     efficency = (ratio ** 2) * alpha 
+#     if reference == 'desi':
+#         efficency *= E_desi_udrop_single_exp(shifted_m) 
+#     if reference == 'mse':
+#         efficency *= E_mse_udrop_single_exp(shifted_m) 
+#     #if dropout_band == 'u':
+#     efficency *= f(redshift)
+#     return efficency
+
+# def E_wst_lbg_dropout_piecewise_wdassignies(redshift, mag, p_min=0.7, plateau=0.8, dropout_band = 'u', return_magnitudes=False):
+
+#     E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+#     E2 = np.minimum(np.sqrt(2)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+#     E3 = np.minimum(np.sqrt(3)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+
+#     p2 = (E2 - E1)/(1-E1)
+#     p3 = (E3 - E2)/(1-E2)
+
+#     eta_2_unclip = (p_min - E1)/(p2 * (1 - E1))
+#     eta_3_unclip = (p_min - E2)/(p3 * (1 - E2))
+#     eta_2 = np.clip(eta_2_unclip, 0, 1)
+#     eta_3 = np.clip(eta_3_unclip, 0, 1)
+
+#     m1 = mag[np.argmin(np.abs(E1 - p_min))]
+#     m2 = mag[np.argmin(np.abs(eta_2_unclip - 1))]
+#     m3 = mag[np.argmin(np.abs(eta_3_unclip - 1))]
+
+#     E = np.zeros(len(mag))
+#     E[mag <= m1] = E1[mag <= m1]
+#     E[(mag > m1)*(mag <= m2)] = (E1 + eta_2 * p2 * (1-E1) )[(mag > m1)*(mag <= m2)]
+#     E[(mag > m2)*(mag <= m3)] = (E2 + eta_3 * p3 * (1-E2) )[(mag > m2)*(mag <= m3)]
+#     E[(mag > m3)] = E3[(mag > m3)]
+#     return E
     
-    E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-    E2 = np.minimum(np.sqrt(2)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-    E3 = np.minimum(np.sqrt(3)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
-
-    p2 = (E2 - E1)/(1-E1)
-    p3 = (E3 - E2)/(1-E2)
-
-    eta_2_unclip = (p_min - E1)/(p2 * (1 - E1))
-    eta_3_unclip = (p_min - E2)/(p3 * (1 - E2))
-    eta_2 = np.clip(eta_2_unclip, 0, 1)
-    eta_3 = np.clip(eta_3_unclip, 0, 1)
-
-    m1 = mag[np.argmin(np.abs(E1 - p_min))]
-    m2 = mag[np.argmin(np.abs(eta_2_unclip - 1))]
-    m3 = mag[np.argmin(np.abs(eta_3_unclip - 1))]
-
-    n = np.zeros(len(E1))
-
-    mask_m1 = mag <= m1
-    n[mask_m1] = 1  
-
-    mask_m1_m2 = (mag > m1) * (mag <= m2)
-    n[mask_m1_m2] = 1 + eta_2[mask_m1_m2] * (1 - E1[mask_m1_m2])
-
-    p2 = (E2 - E1) / (1 - E1)
-
-    mask_m2_m3 = (mag > m2) * (mag <= m3)
-    n = 1 + eta_2 * (1 - E1) + eta_3 * (1 - E1) * (1 - p2)
+# def n_pass_wst_lbg_dropout_piecewise_wdassignies(redshift, mag, p_min=0.7, plateau=0.8, dropout_band='u'):
     
-    return n
+#     E1 = np.minimum(E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+#     E2 = np.minimum(np.sqrt(2)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+#     E3 = np.minimum(np.sqrt(3)*E_wst_lbg_dropout(redshift, mag, dropout_band=dropout_band), plateau)
+
+#     p2 = (E2 - E1)/(1-E1)
+#     p3 = (E3 - E2)/(1-E2)
+
+#     eta_2_unclip = (p_min - E1)/(p2 * (1 - E1))
+#     eta_3_unclip = (p_min - E2)/(p3 * (1 - E2))
+#     eta_2 = np.clip(eta_2_unclip, 0, 1)
+#     eta_3 = np.clip(eta_3_unclip, 0, 1)
+
+#     m1 = mag[np.argmin(np.abs(E1 - p_min))]
+#     m2 = mag[np.argmin(np.abs(eta_2_unclip - 1))]
+#     m3 = mag[np.argmin(np.abs(eta_3_unclip - 1))]
+
+#     n = np.zeros(len(E1))
+
+#     mask_m1 = mag <= m1
+#     n[mask_m1] = 1  
+
+#     mask_m1_m2 = (mag > m1) * (mag <= m2)
+#     n[mask_m1_m2] = 1 + eta_2[mask_m1_m2] * (1 - E1[mask_m1_m2])
+
+#     p2 = (E2 - E1) / (1 - E1)
+
+#     mask_m2_m3 = (mag > m2) * (mag <= m3)
+#     n = 1 + eta_2 * (1 - E1) + eta_3 * (1 - E1) * (1 - p2)
+    
+#     return n
 
 
 #def n_pass_wst_lbg_dropout_piecewise_old(redshift, mag, p_min=0.7, plateau=0.8, dropout_band = 'u'): 
