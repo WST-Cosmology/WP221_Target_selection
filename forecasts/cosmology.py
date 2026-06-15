@@ -26,6 +26,9 @@ def Vsurvey(z,dz,sky, cosmo):
 def D(z, cosmo):
     return ccl.growth_factor(cosmo,1/(1+z))*0.708
 
+def sigma8_z(z, cosmo):
+    return sigma_8(z, cosmo)
+
 def f(z, cosmo):
     return ccl.growth_rate(cosmo,1/(1+z))
 
