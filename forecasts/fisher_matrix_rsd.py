@@ -298,7 +298,6 @@ def sigma_rsd_single_tracer(
             list_sigma_fs8.append(Finv[1, 1]**0.5)
             Flist.append(F)
 
-    print(V)
     zeff = np.sum(zarray * nz)
     Ftot = np.sum(np.array(Flist), axis=0)
     Ftot_inv = np.linalg.inv(Ftot)
@@ -425,14 +424,8 @@ def sigma_rsd_two_tracers(
     sigma_bBs8_eff = Ftot_inv[1, 1]**0.5
     sigma_fs8_eff  = Ftot_inv[2, 2]**0.5
 
-    if not return_F:
-        return (list_zbin,
+    return (list_zbin,
                 list_sigma_bAs8, list_sigma_bBs8, list_sigma_fs8,
                 zeff,
                 sigma_bAs8_eff, sigma_bBs8_eff, sigma_fs8_eff)
-    else:
-        return (list_zbin,
-                list_sigma_bAs8, list_sigma_bBs8, list_sigma_fs8,
-                zeff,
-                sigma_bAs8_eff, sigma_bBs8_eff, sigma_fs8_eff,
-                Ftot)
+

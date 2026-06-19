@@ -508,14 +508,7 @@ def sigma_mnu_two_tracers(
     sigma_bb_eff  = Ftot_inv[1, 1]**0.5
     sigma_mnu_eff = Ftot_inv[2, 2]**0.5
 
-    if not return_F:
-        return (list_zbin,
+    return (list_zbin,
                 list_sigma_ba, list_sigma_bb, list_sigma_mnu,
                 zeff,
                 sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff)
-    else:
-        return (list_zbin,
-                list_sigma_ba, list_sigma_bb, list_sigma_mnu,
-                zeff,
-                sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff,
-                Ftot)

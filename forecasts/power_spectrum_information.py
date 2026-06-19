@@ -73,8 +73,9 @@ def compute_nbP(
             list_b.append(bg)
             list_Pm.append(Pm)
             list_nP.append(n * bg**2 * Pm)
+            
 
-    return list_zbin, list_n, list_b, list_Pm, list_nP, np.mean(np.array(list_nP))
+    return list_zbin, list_n, list_b, list_Pm, list_nP, list_Vsur
 
 
 def compute_nbP_two_tracers(
@@ -129,6 +130,7 @@ def compute_nbP_two_tracers(
     list_Pm   = []
     list_nPA  = []
     list_nPB  = []
+    list_Vsur = []
 
     for i in range(Nbin):
         imin = i     * int((size_z + eps) // Nbin)
@@ -154,78 +156,8 @@ def compute_nbP_two_tracers(
         list_Pm.append(Pm)
         list_nPA.append(na * bga**2 * Pm)
         list_nPB.append(nb * bgb**2 * Pm)
+        list_Vsur.append(Vsur)
 
-    return list_zbin, list_nA, list_nB, list_bA, list_bB, list_Pm, list_nPA, list_nPB
+        list_nP_eff = np.array(list_nPA) + np.array(list_nPB)
 
-
-# ---------------------------------------------------------------------------
-# Convenience plotting functions
-# ---------------------------------------------------------------------------
-
-def plot_nbP_single(zarray, nz, bz, Area, N_degm2,
-                    k_values=(0.01, 0.05, 0.1),
-                    Deltaz=0.2, cosmo=None,
-                    label='tracer', ax=None):
-    """
-    Plot nP = n * b^2 * P(k, z) as a function of redshift for several k values.
-
-    Parameters
-    ----------
-    k_values : tuple/list of k values to plot  [h/Mpc]
-    ax       : matplotlib axis (created if None)
-    """
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(7, 4))
-
-    for k in k_values:
-        zbins, _, _, _, nP = compute_nbP(
-            zarray, nz, bz, Area, N_degm2,
-            k=k, Deltaz=Deltaz, cosmo=cosmo
-        )
-        ax.plot(zbins, nP, marker='o', markersize=3,
-                label=f'{label},  k={k:.3f} h/Mpc')
-
-    ax.axhline(1.0, color='k', ls='--', lw=0.8, label='nP = 1')
-    ax.set_xlabel('redshift z')
-    ax.set_ylabel(r'$n\,b^2\,P(k,z)$')
-    ax.set_title(r'Signal-to-noise ratio $nP$ per bin')
-    ax.legend(fontsize=8)
-    ax.set_yscale('log')
-    plt.tight_layout()
-    return ax
-
-
-def plot_nbP_two_tracers(zarray, nza, nzb, bza, bzb,
-                          Area, Na_degm2, Nb_degm2,
-                          k_values=(0.01, 0.05, 0.1),
-                          Deltaz=0.2, cosmo=None,
-                          label_a='tracer A', label_b='tracer B',
-                          ax=None):
-    """
-    Plot nP = n * b^2 * P(k, z) for two tracers as a function of redshift.
-    """
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(7, 4))
-
-    colors_a = plt.cm.Blues(np.linspace(0.4, 0.9, len(k_values)))
-    colors_b = plt.cm.Reds(np.linspace(0.4, 0.9, len(k_values)))
-
-    for ki, k in enumerate(k_values):
-        zbins, _, _, _, _, _, nPA, nPB = compute_nbP_two_tracers(
-            zarray, nza, nzb, bza, bzb,
-            Area, Na_degm2, Nb_degm2,
-            k=k, Deltaz=Deltaz, cosmo=cosmo
-        )
-        ax.plot(zbins, nPA, marker='o', markersize=3, color=colors_a[ki],
-                label=f'{label_a},  k={k:.3f} h/Mpc')
-        ax.plot(zbins, nPB, marker='s', markersize=3, color=colors_b[ki],
-                label=f'{label_b},  k={k:.3f} h/Mpc')
-
-    ax.axhline(1.0, color='k', ls='--', lw=0.8, label='nP = 1')
-    ax.set_xlabel('redshift z')
-    ax.set_ylabel(r'$n\,b^2\,P(k,z)$')
-    ax.set_title(r'Signal-to-noise ratio $nP$ per bin')
-    ax.legend(fontsize=7, ncol=2)
-    ax.set_yscale('log')
-    plt.tight_layout()
-    return ax
+    return list_zbin, list_nA, list_nB, list_bA, list_bB, list_Pm, list_nPA, list_nPB, list_Vsur
