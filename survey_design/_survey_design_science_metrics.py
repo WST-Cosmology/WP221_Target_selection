@@ -16,11 +16,13 @@ import fisher_matrix_neutrino_mass
 
 from itertools import product
 import numpy as np
+
 def linear_bias(redshift, mag, tracer = 'BG_faint'):
 
     if tracer == 'BG_faint' or tracer == 'BG_bright': return bias_model.bias_bg(redshift, mag)
-    if tracer == 'ELG': return bias_model.bias_elg(redshift, mag)
     if tracer == 'LRG': return bias_model.bias_lrg(redshift, mag)
+    if tracer == 'ELG': return bias_model.bias_elg(redshift, mag)
+    if 'MagMax' in tracer.split('_'): return bias_model.bias_magmax(redshift, mag)
     if tracer == 'QSO': return bias_model.bias_qso(redshift, mag)
     if tracer == 'LBGu': return bias_model.bias_lbg(redshift, mag)
     if tracer == 'LBGg': return bias_model.bias_lbg(redshift, mag)
@@ -33,25 +35,25 @@ def run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo):
     list_zbin_fnl, list_sigma_fnl, zeff, sigma_fnl_eff = fisher_matrix_local_png.sigma_fnl_single_tracer(z,
                                                                                 np.interp(z, zarray, nz),
                                                                                 np.interp(z, zarray, bz),
-                                                                                S_survey,nspec_deg2,Deltaz=0.3,
+                                                                                S_survey,nspec_deg2,Deltaz=0.2,
                                                                                 p=1,mod='bbks',kmax=0.1,cosmo=cosmo)
     
     list_zbin_bao, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff = fisher_matrix_bao_SuEisenstein.sigma_Da_H_single_tracer(z,
                                                                                                                 np.interp(z, zarray, nz),
                                                                                                                 np.interp(z, zarray, bz),
-                                                                                                                S_survey,nspec_deg2,Deltaz=0.3,
+                                                                                                                S_survey,nspec_deg2,Deltaz=0.2,
                                                                                                                 cosmo=cosmo)
     
     list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff=fisher_matrix_neutrino_mass.sigma_mnu_single_tracer(z,
                                                                                                                 np.interp(z, zarray, nz),
                                                                                                                 np.interp(z, zarray, bz),
-                                                                                                                S_survey,nspec_deg2,Deltaz=0.3,
+                                                                                                                S_survey,nspec_deg2,Deltaz=0.2,
                                                                                                                 kmax=0.1,cosmo=cosmo)
 
     list_zbin_rsd, list_sigma_bs8, list_sigma_fs8, zeff, sigma_bs8_eff, sigma_fs8_eff=fisher_matrix_rsd.sigma_rsd_single_tracer(z,
                                                                                                                 np.interp(z, zarray, nz),
                                                                                                                 np.interp(z, zarray, bz),
-                                                                                                                S_survey,nspec_deg2,Deltaz=0.3,
+                                                                                                                S_survey,nspec_deg2,Deltaz=0.2,
                                                                                                                 kmax=0.1,cosmo=cosmo)
 
     results = {}
@@ -67,13 +69,13 @@ def run_forecast_two_tracers(z, zarray, nz1, nz2, bz1, bz2, S_survey, nspec1_deg
     list_zbin_fnl, list_sigma_fnl, zeff_fnl, sigma_fnl_eff= fisher_matrix_local_png.sigma_fnl_two_tracers(z,
                                                                         np.interp(z, zarray, nz1), np.interp(z, zarray, nz2),
                                                                         np.interp(z, zarray, bz1), np.interp(z, zarray, bz2),
-                                                                        S_survey, nspec1_deg2, nspec2_deg2, Deltaz=0.3,
+                                                                        S_survey, nspec1_deg2, nspec2_deg2, Deltaz=0.2,
                                                                         p=1,mod='bbks',kmax=0.1, cosmo=cosmo)
     
     list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff = fisher_matrix_neutrino_mass.sigma_mnu_two_tracers(z,
                                                                         np.interp(z, zarray, nz1), np.interp(z, zarray, nz2),
                                                                         np.interp(z, zarray, bz1), np.interp(z, zarray, bz2),
-                                                                        S_survey, nspec1_deg2, nspec2_deg2, Deltaz=0.3,
+                                                                        S_survey, nspec1_deg2, nspec2_deg2, Deltaz=0.2,
                                                                         kmax=0.1,
                                                                         Sigma_mnu_fid=0.06, dSigma=0.06,
                                                                         cosmo=cosmo, Nk=200,
@@ -83,7 +85,7 @@ def run_forecast_two_tracers(z, zarray, nz1, nz2, bz1, bz2, S_survey, nspec1_deg
                                                                         z, np.interp(z, zarray, nz1), np.interp(z, zarray, nz2),
                                                                         np.interp(z, zarray, bz1), np.interp(z, zarray, bz2),
                                                                         S_survey, nspec1_deg2, nspec2_deg2, 
-        Deltaz=0.3, 
+                                                                        Deltaz=0.2, 
                                                                         kmax=0.1,
                                                                         cosmo=cosmo, Nk=100, Nmu=50,
                                                                         return_F=False)
@@ -100,7 +102,7 @@ def compute_FnP_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo):
     results = {}
     for k in [0.001, 0.1, 1]:
         list_zbin, list_n, list_b, list_Pm, list_nP, list_Vsur = power_spectrum_information.compute_nbP(z, np.interp(z, zarray, nz), np.interp(z, zarray, bz),
-                                                                          S_survey, nspec_deg2, k=k, Deltaz=0.3, cosmo=cosmo)
+                                                                          S_survey, nspec_deg2, k=k, Deltaz=0.2, cosmo=cosmo)
         results[f'list_nP_tracer_k{k}'] = np.array(list_nP)
         list_Vtracer = np.array(list_Vsur)
         results[f'nP_tracer_eff_k{k}'] = np.average(results[f'list_nP_tracer_k{k}'], weights=list_Vtracer)
@@ -116,7 +118,7 @@ def compute_FnP_two_tracers(z, zarray, nz1, nz2, bz1, bz2, S_survey, nspec1_deg2
                                                                         z, np.interp(z, zarray, nz1), np.interp(z, zarray, nz2),
                                                                         np.interp(z, zarray, bz1), np.interp(z, zarray, bz2),
                                                                         S_survey, nspec1_deg2, nspec2_deg2, 
-                                                                        k=k, Deltaz=0.3,cosmo=cosmo)
+                                                                        k=k, Deltaz=0.2,cosmo=cosmo)
         results[f'list_nP_tracer_k{k}'] = np.array(list_nPA) + np.array(list_nPB)
         list_Vtracer = np.array(list_Vsur)
 
@@ -187,8 +189,9 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
 
             if not multi_mag_bin_approach[i]:
 
+                nz_full_range = nz_distrib_frame[j]
                 nz = nz_distrib_frame[j][mask_redshift_eval_range]
-                nspec_deg2 = nspec_deg2_frame[j]
+                nspec_deg2 = nspec_deg2_frame[j] * np.trapezoid(nz_full_range[mask_redshift_eval_range], z_centers[mask_redshift_eval_range])/np.trapezoid(nz_full_range, z_centers)
                 bz = linear_bias(zarray, mag_max, tracer = tracer)
                 # BA0 PS constraints on Da and H
                 results = run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo)

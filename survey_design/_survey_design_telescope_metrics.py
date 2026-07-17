@@ -86,6 +86,7 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
         n_target_count = N_zm['object_count'] / N_zm['surface_deg2']
         Efficiency = np.zeros([len(z_centers), len(mag_centers)])
         n_pass = np.zeros([len(z_centers), len(mag_centers)])
+
         for j, z in enumerate(z_centers):
             Efficiency[j,:] = tracer_spectroscopic_efficiency.E_wst(z, mag_centers, tracer = tracer)
             n_pass[j,:] = tracer_spectroscopic_efficiency.n_pass_wst(z, mag_centers, tracer = tracer)
@@ -104,6 +105,7 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
             n_pointings.append(np.sum(np.sum((n_target_count * n_pass)[:, mag_centers <= m], axis=1), axis=0))
             n_specz_redshift.append(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1))
             n_target_redshift.append(np.sum((n_target_count)[:, mag_centers <= m], axis=1))
+        
         config_survey_update[tracer + '_' + 'target_density'] = np.array(n_target)
         config_survey_update[tracer + '_' + 'spec_density'] = np.array(n_spec)
         config_survey_update[tracer + '_' + 'spec_redshift_density'] = np.array(n_specz_redshift)

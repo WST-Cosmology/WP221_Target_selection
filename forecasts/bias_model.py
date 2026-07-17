@@ -9,6 +9,9 @@ def bias_lrg(redshift, mag):
 def bias_elg(redshift, mag):
     return 1.2 * np.ones(len(redshift))
 
+def bias_magmax(redshift, mag):
+    return 1.2 * np.ones(len(redshift))
+
 def bias_lbg(redshift, mag):
     #from https://arxiv.org/pdf/2106.09713
     def A(m): return -0.98 * (m-25) + 0.11

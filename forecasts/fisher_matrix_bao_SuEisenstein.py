@@ -140,3 +140,66 @@ def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None):
     sigma_H_eff=(np.linalg.inv(Ftot)[1][1])**0.5
     return list_zbin, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff
 
+def sigma_w0_wa_eff(zeff, sigma_Da_eff, sigma_H_eff, cosmo, w0=-1.0, wa=0.0, corr_DaH=0.0, rel_step=1e-2):
+
+    Omega_m_fid = cosmo['Omega_m']
+    Omega_b_fid = cosmo['Omega_b']
+    h_fid       = cosmo['h']
+    n_s_fid     = cosmo['n_s']
+    sigma8_fid  = cosmo['sigma8']
+
+    params_fid = {
+        'w0'     : w0,
+        'wa'     : wa,
+        'Omega_m': Omega_m_fid,
+    }
+
+    def _make_cosmo(p):
+        Om  = p['Omega_m']
+        Oc  = Om - Omega_b_fid          # keep Omega_b fixed, vary Omega_cdm
+        return ccl.Cosmology(
+            Omega_c  = Oc,
+            Omega_b  = Omega_b_fid,
+            h        = h_fid,
+            n_s      = n_s_fid,
+            sigma8   = sigma8_fid,
+            w0       = p['w0'],
+            wa       = p['wa'],
+        )
+
+    def _observables(p):
+        c = _make_cosmo(p)
+        a = 1.0 / (1.0 + zeff)
+        # comoving angular diameter distance [Mpc]
+        chi  = ccl.comoving_radial_distance(c, a)   # Mpc
+        Da   = chi / (1.0 + zeff)                   # Mpc
+        # Hubble parameter [km/s/Mpc]
+        H    = ccl.h_over_h0(c, a) * 100.0 * h_fid # km/s/Mpc
+        return np.array([Da, H])
+
+    param_names = ('w0', 'wa')
+    J = np.zeros((2, len(param_names)))
+
+    for j, par in enumerate(param_names):
+        step = rel_step
+
+        p_plus  = dict(params_fid); p_plus[par]  += step
+        p_minus = dict(params_fid); p_minus[par] -= step
+
+        J[:, j] = (_observables(p_plus) - _observables(p_minus)) / (2.0 * step)
+
+    O_fid = _observables(params_fid)
+    Da_fid, H_fid_val = O_fid
+
+    abs_sigma_Da = sigma_Da_eff * Da_fid 
+    abs_sigma_H  = sigma_H_eff  * H_fid_val 
+
+    C_obs = np.array([
+        [abs_sigma_Da**2, corr_DaH * abs_sigma_Da * abs_sigma_H],
+        [corr_DaH * abs_sigma_Da * abs_sigma_H,  abs_sigma_H**2],])
+    C_obs_inv = np.linalg.inv(C_obs)
+
+    Fisher_mat = J.T @ C_obs_inv @ J
+
+    return Fisher_mat
+

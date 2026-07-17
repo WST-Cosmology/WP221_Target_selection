@@ -1,20 +1,22 @@
 import numpy as np
 
-def E_wst(redshift, mag, tracer = 'BG_faint'):
+def E_wst(redshift, mag, tracer = None):
     if tracer == 'BG_faint': return E_wst_bg_faint(redshift, mag)
     if tracer == 'BG_bright': return E_wst_bg_bright(redshift, mag)
     if tracer == 'ELG': return E_wst_elg(redshift, mag)
     if tracer == 'LRG': return E_wst_lrg(redshift, mag)
+    if 'MagMax' in tracer.split('_'): return E_wst_magmax(redshift, mag)
     if tracer == 'QSO': return E_wst_qso(redshift, mag)
     if tracer == 'LBGu': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.9, plateau=1, dropout_band = 'u', return_magnitudes=False)
     if tracer == 'LBGg': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.8, plateau=1, dropout_band = 'g', return_magnitudes=False)
     if tracer == 'LBGr': return E_wst_lbg_dropout_piecewise(redshift, mag, p_min=0.7, plateau=1, dropout_band = 'r', return_magnitudes=False)
         
-def n_pass_wst(redshift, mag, tracer = 'BG_faint'):
+def n_pass_wst(redshift, mag, tracer = None):
     if tracer == 'BG_faint': return n_pass_wst_bg_faint(redshift, mag)
     if tracer == 'BG_bright': return n_pass_wst_bg_bright(redshift, mag)
     if tracer == 'ELG': return n_pass_wst_elg(redshift, mag)
     if tracer == 'LRG': return n_pass_wst_lrg(redshift, mag)
+    if 'MagMax' in tracer.split('_'): return n_pass_wst_magmax(redshift, mag)
     if tracer == 'QSO': return n_pass_wst_qso(redshift, mag)
     if tracer == 'LBGu': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.9,plateau=1,dropout_band='u')
     if tracer == 'LBGg': return n_pass_wst_lbg_dropout_piecewise(redshift,mag,p_min=0.8,plateau=1,dropout_band='g')
@@ -22,12 +24,12 @@ def n_pass_wst(redshift, mag, tracer = 'BG_faint'):
 
 ### BG (bright, faint) ####
 def E_wst_bg_bright(redshift, mag):
-    return 0.99 * np.ones_like(redshift)
+    return 0.99 * np.ones_like(redshift) * (redshift < 1)
 def n_pass_wst_bg_bright(redshift,mag):
     n = np.ones(len(mag)) 
     return n
 def E_wst_bg_faint(redshift, mag):
-    return 0.99 * np.ones_like(redshift)
+    return 0.99 * np.ones_like(redshift) * (redshift < 1)
 def n_pass_wst_bg_faint(redshift,mag):
     n = np.ones(len(mag)) 
     return n
@@ -45,6 +47,13 @@ def E_wst_lrg(redshift, mag):
     # DESI LRG spectroscopic efficiency roughly valid for 0.4 < z < 1.1
     return 0.99 * ((redshift > 0.4) & (redshift < 1.1))
 def n_pass_wst_lrg(redshift,mag):
+    n = np.ones(len(mag)) 
+    return n
+
+########## MagMax #########
+def E_wst_magmax(redshift, mag):
+    return 0.99 * np.ones_like(redshift)
+def n_pass_wst_magmax(redshift,mag):
     n = np.ones(len(mag)) 
     return n
 
