@@ -38,6 +38,7 @@ config_survey_bright = {'survey_type': 'Bright',
                  'observation_fraction': 0.8 * 0.5 * 0.2,
                  'tracer_N_zm_file' : [path+f'LS_BG_BRIGHT_WST.npz'],
                  'tracers' : ['BG_bright'],
+                 'limiting_mag_band': ['r'],
                  'color' : ['gold']}
 config_survey_grey = {'survey_type': 'Grey',
                  'N_fibres': 30000,
@@ -49,6 +50,7 @@ config_survey_grey = {'survey_type': 'Grey',
                                        path+f'LS_LRG_WST.npz',
                                        path+f'LS_ELG_WST.npz'],
                  'tracers' : ['BG_faint', 'LRG', 'ELG'],
+                 'limiting_mag_band': ['r', 'z', 'g'],
                  'color' : ['darkorange', 'brown','peru']}
 
 config_survey_grey_magmax = {'survey_type': 'Grey_MagMax',
@@ -63,6 +65,7 @@ config_survey_grey_magmax = {'survey_type': 'Grey_MagMax',
                                       path+f'COSMOS_H_MagLim_WST.npz'],
                  'tracers' : ['MagMax',
                               'MagMax_lowz', 'MagMax_midz', 'MagMax_highz'],
+                 'limiting_mag_band': ['H', 'H', 'H', 'H'],
                  'color' : ['cyan',
                             'b', 'darkblue', 'dodgerblue']}
 
@@ -72,11 +75,11 @@ config_survey_dark = {'survey_type': 'Dark',
                  'S_survey': 18000,
                  'exposure_time': 1000, 
                  'observation_fraction': 0.8 * 0.5 * 0.45,
-                 'tracer_N_zm_file' : [#path+f'COSMOS_QSO_WST_QSO_no_H.npz', 
-                                       path+f'COSMOS_LBG_udropout_highz.npz',
+                 'tracer_N_zm_file' : [path+f'COSMOS_LBG_udropout_highz.npz',
                                        path+f'COSMOS_LBG_gdropout.npz', 
                                        path+f'COSMOS_LBG_rdropout.npz'],
                  'tracers' : ['LBGu', 'LBGg', 'LBGr'],
+                 'limiting_mag_band': ['r', 'i', 'z'],
                     'color' : ['m','g','r']}
 
 mag_max_eval_range = {'Bright': [[19, 21]],
@@ -89,7 +92,7 @@ redshift_eval_range = {'Bright': [[0, 1.5]],
                       'Grey'  :  [[0, 2], [0, 2], [0, 2]],
                       'Grey_MagMax': [[0, 2], 
                                       [0., 2], [0.5, 1.], [1., 2.]], 
-                      'Dark'  :  [[0, 4], [2, 4.5], [2.5, 5], [4, 6]]}
+                      'Dark'  :  [[2, 4.5], [2.5, 5.5], [4, 6]]}
 
 multi_mag_bin_approach = {'Bright': [False],
                           'Grey'  :  [False, False, False, False],
@@ -106,7 +109,7 @@ for i, config_survey in enumerate(config_surveys):
 
     survey = config_survey['survey_type']
 
-    if survey != 'Grey_MagMax': continue
+    if survey != 'Dark': continue
 
     config_survey_update = _survey_design_telescope_metrics.Survey_design_telescope_metrics(config_survey,mag_max_eval_range=mag_max_eval_range[survey], max_mag=None)   
 

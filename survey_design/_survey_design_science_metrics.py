@@ -191,7 +191,7 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
 
                 nz_full_range = nz_distrib_frame[j]
                 nz = nz_distrib_frame[j][mask_redshift_eval_range]
-                nspec_deg2 = nspec_deg2_frame[j] * np.trapezoid(nz_full_range[mask_redshift_eval_range], z_centers[mask_redshift_eval_range])/np.trapezoid(nz_full_range, z_centers)
+                nspec_deg2 = nspec_deg2_frame[j] * np.trapz(nz_full_range[mask_redshift_eval_range], z_centers[mask_redshift_eval_range])/np.trapz(nz_full_range, z_centers)
                 bz = linear_bias(zarray, mag_max, tracer = tracer)
                 # BA0 PS constraints on Da and H
                 results = run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo)
@@ -469,7 +469,8 @@ def build_total_survey_information_metrics(config_survey_update, forecasts_surve
         Information_FnP_metrics_k1[idx] = np.sum([
             nP_metrics[f"{tracer}_F_k1"][m]
             for tracer, m in zip(tracers, idx)])
-    return {
+        
+    results = {
         'total_survey_time':                 total_time,
         'total_survey_efficiency':           total_efficiency,
         'total_survey_fisher_information_fnl': Information_fnl,
@@ -479,7 +480,15 @@ def build_total_survey_information_metrics(config_survey_update, forecasts_surve
         'total_survey_fisher_information_rsd': Information_rsd,
         'total_survey_information_FnP_k0.001': Information_FnP_metrics_k0001,
         'total_survey_information_FnP_k0.1': Information_FnP_metrics_k01,
-        'total_survey_information_FnP_k1': Information_FnP_metrics_k1,
-       # 'total_survey_fisher_nP_ratio_k0.1': ,
-       # 'total_survey_fisher_nP_ratio_k1': ,
-    }
+        'total_survey_information_FnP_k1': Information_FnP_metrics_k1,}
+
+    for i, tracer in enumerate(tracers):
+        spec_density   = np.array(config_survey_update[tracer + '_spec_density'])
+        target_density = np.array(config_survey_update[tracer + '_target_density'])
+        eff_1d = spec_density / target_density          # shape: (shape[i],)
+
+        reshape_dims = [1] * len(shape)
+        reshape_dims[i] = shape[i]
+        results[tracer+'_efficiency'] = np.broadcast_to(eff_1d.reshape(reshape_dims), shape)
+
+    return results

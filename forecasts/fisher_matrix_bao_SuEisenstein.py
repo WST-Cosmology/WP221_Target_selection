@@ -199,7 +199,7 @@ def sigma_w0_wa_eff(zeff, sigma_Da_eff, sigma_H_eff, cosmo, w0=-1.0, wa=0.0, cor
         [corr_DaH * abs_sigma_Da * abs_sigma_H,  abs_sigma_H**2],])
     C_obs_inv = np.linalg.inv(C_obs)
 
-    Fisher_mat = J.T @ C_obs_inv @ J
+    Fisher_mat_w0wa = J.T @ C_obs_inv @ J
 
-    return Fisher_mat
+    return Fisher_mat_w0wa
 
