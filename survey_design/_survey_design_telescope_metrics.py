@@ -1,6 +1,9 @@
 import numpy as np
 import math, copy
 import matplotlib.pyplot as plt
+from astropy.table import Table
+from scipy.interpolate import RectBivariateSpline
+from scipy.ndimage import gaussian_filter1d
 import _tracer_spectroscopic_efficiency as tracer_spectroscopic_efficiency
 
 def passes_needed(Xtarget_init, Xfiber, X_I_want, max_passes=2000, poiss=True):
@@ -80,32 +83,87 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
     observational_fraction = config_survey['observation_fraction']
     config_survey_update = copy.deepcopy(config_survey)
     for i, tracer in enumerate(config_survey['tracers']):
-        N_zm = np.load(config_survey['tracer_N_zm_file'][i])
-        mag_centers = N_zm['mag_center']
-        z_centers = N_zm['z_center']
-        n_target_count = N_zm['object_count'] / N_zm['surface_deg2']
-        Efficiency = np.zeros([len(z_centers), len(mag_centers)])
-        n_pass = np.zeros([len(z_centers), len(mag_centers)])
+        print(tracer)
+        if tracer != 'QSO_qlf': 
+            N_zm = np.load(config_survey['tracer_N_zm_file'][i])
+            mag_centers = N_zm['mag_center']
+            z_centers = N_zm['z_center']
+            n_target_count = N_zm['object_count'] / N_zm['surface_deg2']
+            Efficiency = np.zeros([len(z_centers), len(mag_centers)])
+            n_pass = np.zeros([len(z_centers), len(mag_centers)])
+    
+            for j, z in enumerate(z_centers):
+                Efficiency[j,:] = tracer_spectroscopic_efficiency.E_wst(z, mag_centers, tracer = tracer)
+                n_pass[j,:] = tracer_spectroscopic_efficiency.n_pass_wst(z, mag_centers, tracer = tracer)
+    
+            n_pointings = []
+            n_target = []
+            n_spec = []
+            n_specz_redshift = []
+            n_target_redshift = []
+    
+            mask_mag_max_eval_range = (mag_centers >= mag_max_eval_range[i][0])*(mag_centers <= mag_max_eval_range[i][1]) 
+            
+            for m in np.array(mag_centers)[mask_mag_max_eval_range]:
 
-        for j, z in enumerate(z_centers):
-            Efficiency[j,:] = tracer_spectroscopic_efficiency.E_wst(z, mag_centers, tracer = tracer)
-            n_pass[j,:] = tracer_spectroscopic_efficiency.n_pass_wst(z, mag_centers, tracer = tracer)
+                n_target.append(np.sum(np.sum(n_target_count[:, mag_centers <= m], axis=1), axis=0))
+                n_spec.append(np.sum(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), axis=0))
+                n_pointings.append(np.sum(np.sum((n_target_count * n_pass)[:, mag_centers <= m], axis=1), axis=0))
+                n_specz_redshift.append(gaussian_filter1d(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), sigma=0.7))
+                n_target_redshift.append(gaussian_filter1d(np.sum((n_target_count)[:, mag_centers <= m], axis=1), sigma=0.7))
+            
+        if tracer == 'QSO_qlf': 
 
-        n_pointings = []
-        n_target = []
-        n_spec = []
-        n_specz_redshift = []
-        n_target_redshift = []
+            z_axis_interp = np.linspace(0, 4, 50)
+            m_max_axis_interp = np.linspace(21, 25, 50)
+            f = np.zeros([len(z_axis_interp), len(m_max_axis_interp)])
+            
+            z_arr_file = np.linspace(0, 6, 50)
+            m_max_arr_file = [21, 22, 23, 23.3, 23.5, 24, 24.5, 25]
+            store_f = np.zeros([len(z_arr_file), len(m_max_arr_file)])
+            
+            name_file = [21, 22, 23, '23p3',  '23p5', 24, '24p5', 25]
+            
+            for k, rmax in enumerate(name_file):
+                t = Table.read(f"../target_selection/quasars/qlf/qlf_rmax_{rmax}.ecsv", format="ascii.ecsv")
+                
+                if rmax == '23p3': 
+                    rmax_ = '23p5'
+                else: rmax_ = rmax
+            
+                z = t['z']
+                qlf =  t[f'qlf_{rmax_}']
+                qlf_interp = np.interp(z_arr_file, z, qlf)
+                arr = np.arange(0, 4.05, 0.05)
+                ntot = np.sum(np.interp(arr, z, qlf))    
+                dn_dz = ntot * qlf_interp/np.trapz(qlf_interp,z_arr_file, )
+                store_f[:,k] = dn_dz
+            
+            interp = RectBivariateSpline(z_arr_file,m_max_arr_file,store_f,
+                kx=3,
+                ky=3)
 
-        mask_mag_max_eval_range = (mag_centers >= mag_max_eval_range[i][0])*(mag_centers <= mag_max_eval_range[i][1]) 
-        
-        for m in np.array(mag_centers)[mask_mag_max_eval_range]:
-            n_target.append(np.sum(np.sum(n_target_count[:, mag_centers <= m], axis=1), axis=0))
-            n_spec.append(np.sum(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), axis=0))
-            n_pointings.append(np.sum(np.sum((n_target_count * n_pass)[:, mag_centers <= m], axis=1), axis=0))
-            n_specz_redshift.append(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1))
-            n_target_redshift.append(np.sum((n_target_count)[:, mag_centers <= m], axis=1))
-        
+            Z, M = np.meshgrid(z_axis_interp, m_max_axis_interp, indexing='ij')
+            f = np.clip(interp.ev(Z, M), 0, 1000000)
+
+            n_pointings = []
+            n_target = []
+            n_spec = []
+            n_specz_redshift = []
+            n_target_redshift = []
+
+            mag_centers = m_max_axis_interp
+            z_centers = z_axis_interp
+
+            mask_mag_max_eval_range = (mag_centers >= mag_max_eval_range[i][0])*(mag_centers <= mag_max_eval_range[i][1]) 
+            m_range_restricted = np.array(mag_centers)[mask_mag_max_eval_range]
+            for p, m in enumerate(m_range_restricted):
+                n_target.append(((0.7)/(1-0.3))*np.trapz(f[:,p], z_centers))
+                n_spec.append(0.7*np.trapz(f[:,p], z_centers))
+                n_pointings.append(np.trapz(f[:,p], z_centers))
+                n_specz_redshift.append(f[:,p])
+                n_target_redshift.append(f[:,p])
+                
         config_survey_update[tracer + '_' + 'target_density'] = np.array(n_target)
         config_survey_update[tracer + '_' + 'spec_density'] = np.array(n_spec)
         config_survey_update[tracer + '_' + 'spec_redshift_density'] = np.array(n_specz_redshift)

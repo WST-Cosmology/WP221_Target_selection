@@ -43,5 +43,5 @@ config_survey_dark = {'survey_type': 'Dark',
                  'tracer_N_zm_file' : [path+f'COSMOS_QSO_WST_QSO_no_H.npz', path+f'COSMOS_LBG_udropout_highz.npz',
                                        path+f'COSMOS_LBG_gdropout.npz', path+f'COSMOS_LBG_rdropout.npz'],
                  'limiting_mag_band': ['r', 'r', 'i', 'z'],
-                 'tracers' : ['QSO', 'LBGu', 'LBGg', 'LBGr'],
+                 'tracers' : ['QSO_qlf', 'LBGu', 'LBGg', 'LBGr'],
                     'color' : ['k', 'm','g','r']}
