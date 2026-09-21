@@ -33,15 +33,27 @@ sample=sys.argv[1]
 #sample = 'magmax'
 
 scale_def=['theta',5,20]
-z_range=[0.,1.6]
-Nz=16
-dz=0.1
-
-H_array=np.array([20.35,20.85,21.35,21.7])
-Zarray=np.array([z_range[0]+dz*(i+0.5) for i in range(Nz)]) #Z list for 8 bins
 ialpha=1 # weithing equal accross scales
 
+if sample=='magmax':
+    z_range=[0.,1.6]
+    Nz=16
+    dz=0.1
+    magn_str='Hcut'
+    magn_edge=np.array([20,20.5,21,21.5,21.8])
+    magn_array=np.array([20.35,20.85,21.35,21.7])
+    Zarray=np.array([z_range[0]+dz*(i+0.5) for i in range(Nz)]) #Z list for 8 bins
 
+elif sample=='BG':
+    z_range=[0.,0.6]
+    Nz=6
+    dz=0.1
+    magn_str='rcut'
+    magn_edge=np.array([20,20.5,21,21.5,22])
+    magn_array=np.array([20.35,20.85,21.35,21.85])
+    Zarray=np.array([z_range[0]+dz*(i+0.5) for i in range(Nz)]) #Z list for 8 bins
+else:
+    print('uncorrect name')
 
 ""
 """
@@ -248,13 +260,13 @@ def w_xx(sample_x, scale_range, z_range, Ntheta, Nz, Npatch, z_for_rand ,Eta_ran
         w_rand =  weight_rand_eboss_ELG_south
         if z_for_rand==True:
             z_rand=z_rand_eboss_ELG_south
-    elif sample_x=='magmax':
-        Hmin=option[1]
-        Hmax=option[2]
-        sel_H=((mag_sample>=Hmin)&(mag_sample<Hmax))
-        ra_gal =ra_sample[sel_H]
-        dec_gal =dec_sample[sel_H]
-        z_gal =z_sample[sel_H]
+    elif sample_x=='magmax' or sample_x=='BG':
+        mmin=option[1]
+        mmax=option[2]
+        sel_m=((mag_sample>=mmin)&(mag_sample<mmax))
+        ra_gal =ra_sample[sel_m]
+        dec_gal =dec_sample[sel_m]
+        z_gal =z_sample[sel_m]
         w_gal = np.ones(len(ra_gal)) #if you do have weights, replace with np.ones(len(ra_gal))
         
         ra_rand =ra_rand_sample
@@ -364,10 +376,10 @@ def w_xx(sample_x, scale_range, z_range, Ntheta, Nz, Npatch, z_for_rand ,Eta_ran
 
 
 
-A0,B0,C0=w_xx(sample_x='magmax', scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=['Hcut',20,20.5])
-A1,B1,C1=w_xx(sample_x='magmax', scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=['Hcut',20.5,21])
-A2,B2,C2=w_xx(sample_x='magmax', scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=['Hcut',21,21.5])
-A3,B3,C3=w_xx(sample_x='magmax', scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=['Hcut',21.5,21.8])
+A0,B0,C0=w_xx(sample_x=sample, scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=[magn_str,magn_edge[0],magn_edge[1]])
+A1,B1,C1=w_xx(sample_x=sample, scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=[magn_str,magn_edge[1],magn_edge[2]])
+A2,B2,C2=w_xx(sample_x=sample, scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=[magn_str,magn_edge[2],magn_edge[3]])
+A3,B3,C3=w_xx(sample_x=sample, scale_range=scale_def, z_range=z_range, Ntheta=10, Nz=Nz, Npatch=100, z_for_rand=False ,Eta_rand=5,option=[magn_str,magn_edge[3],magn_edge[4]])
 
 
 ""
@@ -412,7 +424,7 @@ b_array_err=np.transpose(np.array([[0.5 * np.sqrt(A0[i][ialpha]/w_m[i]*0.1) * B0
                                     [0.5 * np.sqrt(A3[i][ialpha]/w_m[i]*0.1) * B3[i][ialpha] / A3[i][ialpha] for i in range(Nz)]]))
 
 
-z_array, m_array=Zarray, H_array
+z_array, m_array=Zarray, magn_array
 
 # Fit
 result = least_squares(
@@ -445,23 +457,19 @@ Save data
 
 
 data = {
-    '20_20p5_data': A0,
-    '20_20p5_cov': B0,
-    '20_20p5_multi': C0,
-    '20p5_21_data': A1,
-    '20p5_21_cov': B1,
-    '20p5_21_multi': C1,
-    '21_21p5_data': A2,
-    '21_21p5_cov': B2,
-    '21_21p5_multi': C2,
-    '21p5_21p8_data': A3,
-    '21p5_21p8_cov': B3,
-    '21p5_21p8_multi': C3,
+    'mag_eff':magn_array,
+    'mag_edge':magn_edge,
+    'magn_str':magn_str,
+    'scale_range':scale_def,
+    'z_range':z_range,
+    'data': np.array([A0,A1,A2,A3]),
+    'cov': np.array([B0,B1,B2,B3]),
+    'multi': np.array([C0,C1,C2,C3]),
     'best_fit':[a_fit,b_fit,c_fit,d_fit]
     
 }
 
-chemin_fichier_pickle = "/nfs/pic.es/user/w/wdassign/WST/MagMax/FS2/Data_magmax_ls.pickle"
+chemin_fichier_pickle = "/nfs/pic.es/user/w/wdassign/WST/MagMax/FS2/Data_"+str(sample)+"_ls.pickle"
                        
 try:
     # Ouvrir le fichier en mode binaire pour l'écriture
@@ -528,4 +536,4 @@ plt.legend()
 
 plt.title('MagMax bias')
 plt.ylabel(' Galaxy bias $b$')
-plt.savefig('/nfs/pic.es/user/w/wdassign/WST/MagMax/FS2/Bias_magmax_1pannel_ls.png')
+plt.savefig('/nfs/pic.es/user/w/wdassign/WST/MagMax/FS2/Bias_'+str(sample)+'_1pannel_ls.png')
