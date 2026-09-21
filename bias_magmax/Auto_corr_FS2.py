@@ -32,7 +32,7 @@ sample=sys.argv[1]
 
 #sample = 'magmax'
 
-scale_def=['theta',1,10]
+scale_def=['theta',5,20]
 z_range=[0.,1.6]
 Nz=16
 dz=0.1
@@ -528,4 +528,4 @@ plt.legend()
 
 plt.title('MagMax bias')
 plt.ylabel(' Galaxy bias $b$')
-plt.savefig('/nfs/pic.es/user/w/wdassign/WST/MagMax/FS2/Bias_magmax_1pannel_ss.png')
+plt.savefig('/nfs/pic.es/user/w/wdassign/WST/MagMax/FS2/Bias_magmax_1pannel_ls.png')
