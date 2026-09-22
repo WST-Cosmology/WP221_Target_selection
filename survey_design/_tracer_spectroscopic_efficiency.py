@@ -24,12 +24,12 @@ def n_pass_wst(redshift, mag, tracer = None):
 
 ### BG (bright, faint) ####
 def E_wst_bg_bright(redshift, mag):
-    return 0.99 * np.ones_like(redshift) * (redshift < 1)
+    return 0.99 * np.ones_like(redshift) * (redshift <= 1)
 def n_pass_wst_bg_bright(redshift,mag):
     n = np.ones(len(mag)) 
     return n
 def E_wst_bg_faint(redshift, mag):
-    return 0.99 * np.ones_like(redshift) * (redshift < 1)
+    return 0.99 * np.ones_like(redshift) * (redshift <= 1)
 def n_pass_wst_bg_faint(redshift,mag):
     n = np.ones(len(mag)) 
     return n
@@ -37,7 +37,7 @@ def n_pass_wst_bg_faint(redshift,mag):
 ########## ELG ###########
 def E_wst_elg(redshift, mag):
     # [O II] doublet observable in DESI roughly for 0.6 < z < 1.6
-    return 0.726 * ((redshift > 0.6) & (redshift < 1.6))
+    return 0.726 * ((redshift > 0.6) & (redshift <= 1.6))
 def n_pass_wst_elg(redshift,mag):
     n = np.ones(len(mag)) 
     return n
@@ -45,14 +45,15 @@ def n_pass_wst_elg(redshift,mag):
 ########## LRG ###########
 def E_wst_lrg(redshift, mag):
     # DESI LRG spectroscopic efficiency roughly valid for 0.4 < z < 1.1
-    return 0.99 * ((redshift > 0.4) & (redshift < 1.1))
+    return 0.99 * ((redshift > 0.4) & (redshift <= 1.1))
 def n_pass_wst_lrg(redshift,mag):
     n = np.ones(len(mag)) 
     return n
 
 ########## MagMax #########
 def E_wst_magmax(redshift, mag):
-    return 0.99 * np.ones_like(redshift)
+    return 0.99 * ((redshift <= 1.6))
+    
 def n_pass_wst_magmax(redshift,mag):
     n = np.ones(len(mag)) 
     return n
@@ -60,7 +61,7 @@ def n_pass_wst_magmax(redshift,mag):
 ########## QSO ###########
 def E_wst_qso(redshift, mag):
     # Mg II enters DESI range at z ~ 0.3
-    return 0.7*(redshift > 0.3)
+    return 0.7*(redshift >= 0.3)
 def n_pass_wst_qso(redshift,mag):
     n = np.ones(len(mag)) 
     return n

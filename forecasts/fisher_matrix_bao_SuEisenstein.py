@@ -85,7 +85,7 @@ def Mat_Fisher_BAO(n,beff,zeff,Vsur, cosmo=None):
 
 
 
-def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None):
+def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None, return_fisher=False):
     '''
     return 3 array zbins, sigma(Da), sigma(H) corresponding to measurements for bins of width Dz for which sigma is finite. 
     also returns 3 values, zeff, sigma(Da)_eff,sigma(H)_eff corresponding to the combined measurements. 
@@ -136,9 +136,15 @@ def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None):
     zeff=np.sum(zarray*nz)
     Flist=np.array(Flist)
     Ftot=np.sum(Flist,axis=0)
-    sigma_Da_eff=(np.linalg.inv(Ftot)[0][0])**0.5
-    sigma_H_eff=(np.linalg.inv(Ftot)[1][1])**0.5
-    return list_zbin, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff
+    Cov = np.linalg.inv(Ftot)
+
+    sigma_Da_eff = np.sqrt(Cov[0, 0])
+    sigma_H_eff  = np.sqrt(Cov[1, 1])
+    
+    if return_fisher:
+        return list_zbin, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff, Ftot
+    else:
+        return list_zbin, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff
 
 def Fisher_mat_BAO_cosmo_params(zeff, sigma_Da_eff, sigma_H_eff, cosmo,
                    param_names=('w0', 'wa', 'Omega_m'),

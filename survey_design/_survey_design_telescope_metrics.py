@@ -5,6 +5,9 @@ from astropy.table import Table
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage import gaussian_filter1d
 import _tracer_spectroscopic_efficiency as tracer_spectroscopic_efficiency
+import sys, os
+sys.path.append('../forecasts/')
+import bias_model
 
 def passes_needed(Xtarget_init, Xfiber, X_I_want, max_passes=2000, poiss=True):
     nleft = []
@@ -91,16 +94,20 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
             n_target_count = N_zm['object_count'] / N_zm['surface_deg2']
             Efficiency = np.zeros([len(z_centers), len(mag_centers)])
             n_pass = np.zeros([len(z_centers), len(mag_centers)])
+            bias = np.zeros([len(z_centers), len(mag_centers)])
     
             for j, z in enumerate(z_centers):
                 Efficiency[j,:] = tracer_spectroscopic_efficiency.E_wst(z, mag_centers, tracer = tracer)
                 n_pass[j,:] = tracer_spectroscopic_efficiency.n_pass_wst(z, mag_centers, tracer = tracer)
-    
+                
+                bias[j,:] =  bias_model.linear_bias(z, mag_centers, tracer = tracer)
+
             n_pointings = []
             n_target = []
             n_spec = []
             n_specz_redshift = []
             n_target_redshift = []
+            mean_bias_specz_redshift = []
     
             mask_mag_max_eval_range = (mag_centers >= mag_max_eval_range[i][0])*(mag_centers <= mag_max_eval_range[i][1]) 
             
@@ -109,8 +116,13 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
                 n_target.append(np.sum(np.sum(n_target_count[:, mag_centers <= m], axis=1), axis=0))
                 n_spec.append(np.sum(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), axis=0))
                 n_pointings.append(np.sum(np.sum((n_target_count * n_pass)[:, mag_centers <= m], axis=1), axis=0))
-                n_specz_redshift.append(gaussian_filter1d(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), sigma=0.7))
-                n_target_redshift.append(gaussian_filter1d(np.sum((n_target_count)[:, mag_centers <= m], axis=1), sigma=0.7))
+                n_specz_redshift.append(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1))
+                n_target_redshift.append(np.sum((n_target_count)[:, mag_centers <= m], axis=1))
+                Nb_redshift = np.sum((n_target_count * Efficiency * bias)[:, mag_centers <= m], axis=1)
+                if 'MagMax' not in tracer:
+                    mean_bias_specz_redshift.append(bias_model.linear_bias(z_centers, m, tracer=tracer))
+                else:
+                    mean_bias_specz_redshift.append(Nb_redshift/np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1))
             
         if tracer == 'QSO_qlf': 
 
@@ -151,6 +163,7 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
             n_spec = []
             n_specz_redshift = []
             n_target_redshift = []
+            mean_bias_specz_redshift = []
 
             mag_centers = m_max_axis_interp
             z_centers = z_axis_interp
@@ -163,7 +176,11 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
                 n_pointings.append(np.trapz(f[:,p], z_centers))
                 n_specz_redshift.append(f[:,p])
                 n_target_redshift.append(f[:,p])
-                
+                mean_bias_specz_redshift.append(bias_model.linear_bias(z_centers, m, tracer=tracer))
+
+            n_target_count = None
+
+        config_survey_update[tracer + '_' + 'n_target_count_2d'] = n_target_count
         config_survey_update[tracer + '_' + 'target_density'] = np.array(n_target)
         config_survey_update[tracer + '_' + 'spec_density'] = np.array(n_spec)
         config_survey_update[tracer + '_' + 'spec_redshift_density'] = np.array(n_specz_redshift)
@@ -175,6 +192,7 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
         config_survey_update[tracer + '_' + 'calendar_time'] = config_survey_update[tracer + '_' + 'fibre_time'] / observational_fraction
         config_survey_update[tracer + '_' + 'mag_centers'] = np.array(mag_centers)[mask_mag_max_eval_range]
         config_survey_update[tracer + '_' + 'redshift_centers'] = np.array(z_centers)
+        config_survey_update[tracer + '_' + 'mean_bias_redshift'] = np.array(mean_bias_specz_redshift)
 
     if max_mag != None:
         print(' We compute the survey completeness C(n) after n >= 1 passes')
@@ -193,7 +211,7 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
         config_survey_update['total_survey_completeness'] = np.array(completeness)
         config_survey_update['total_survey_fibre_time'] = np.array(t_full_sky_one_exp) * np.array(number_passes) / (365.25 * 24 * 3600)
         config_survey_update['total_survey_calendar_time'] = config_survey_update['total_survey_fibre_time'] / observational_fraction
-        
+    
     return config_survey_update
 
 
