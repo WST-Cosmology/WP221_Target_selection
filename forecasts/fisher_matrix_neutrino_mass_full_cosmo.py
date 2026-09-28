@@ -40,6 +40,9 @@ DEFAULT_STEPS = {
 #           -> sigma(As) = As_fid * 0.015 = 2.1e-9 * 0.015 ~ 3.1e-11
 # ---------------------------------------------------------------------------
 PLANCK_PRIORS = {
+    'b' : 2,
+    'ba' : 2,
+    'bb': 2,
     'Mnu'    : 0.5,                        # eV  (very weak, essentially free)
     'H0'     : 100.0 * 0.0054,            # km/s/Mpc  (from sigma_h = 0.0054)
     'omega_c': 0.0012,
@@ -152,7 +155,7 @@ def _apply_priors(F_full, prior_params, param_order):
         idx = param_order.index(par)
         sigma_prior = PLANCK_PRIORS[par]
         F_full[idx, idx] += 1.0 / sigma_prior**2
-        print(f'  Planck prior on {par}: sigma = {sigma_prior:.4g}')
+        #print(f'  Planck prior on {par}: sigma = {sigma_prior:.4g}')
 
 
 # ---------------------------------------------------------------------------
@@ -321,6 +324,8 @@ def sigma_mnu_single_tracer_full(
     nz     = nz / np.sum(nz)
     size_z = len(zarray)
 
+    print(Nbin)
+
     for i in range(Nbin):
         imin  = i     * int((size_z + eps) // Nbin)
         imax  = (i+1) * int((size_z + eps) // Nbin)
@@ -350,22 +355,20 @@ def sigma_mnu_single_tracer_full(
 
     zeff  = np.sum(zarray * nz)
     Ftot  = np.sum(np.array(Flist), axis=0)
-
+    Ftot_no_prior = Ftot.copy()
     # --- apply prior ONCE to the total Fisher matrix ---
     _apply_priors(Ftot, prior_params, param_order_1t)
 
     # marginalise once over cosmo params, keep [b, Mnu]
     Ftot_inv  = np.linalg.inv(Ftot)
-    Ftot_marg = np.linalg.inv(Ftot_inv[np.ix_([0, 1], [0, 1])])
-    Ftot_marg_inv = np.linalg.inv(Ftot_marg)
 
-    sigma_b_eff   = Ftot_marg_inv[0, 0]**0.5
-    sigma_mnu_eff = Ftot_marg_inv[1, 1]**0.5
+    sigma_b_eff   = Ftot_inv[0, 0]**0.5
+    sigma_mnu_eff = Ftot_inv[1, 1]**0.5
 
     if not return_F:
         return list_zbin, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff
     else:
-        return list_zbin, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff, Ftot
+        return list_zbin, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff, Ftot_no_prior
 
 
 def sigma_mnu_two_tracers_full(
@@ -434,18 +437,19 @@ def sigma_mnu_two_tracers_full(
             nb  = nzbsum * Nb_degm2 * Area / Vsur
 
             # raw full matrix, no prior
-            F    = Mat_Fisher_2tracer_mnu_full(
+            F_full    = Mat_Fisher_2tracer_mnu_full(
                        na, nb, bga, bgb, zbin, Vsur, kmin, kmax,
                        Mnu_fid=Mnu_fid,
                        deriv_interps=deriv_interps,
                        Pm_interp=Pm_interp,
                        cosmo=cosmo, Nk=Nk)
-            Finv = np.linalg.inv(F)
             list_zbin.append(zbin)
+            Flist.append(F_full)
+            _apply_priors(F_full, prior_params, param_order_2t)
+            Finv = np.linalg.inv(F_full)
             list_sigma_ba.append(Finv[0, 0]**0.5)
             list_sigma_bb.append(Finv[1, 1]**0.5)
             list_sigma_mnu.append(Finv[2, 2]**0.5)
-            Flist.append(F)
 
         elif nzasum > 0:
             bga = np.sum(nza[imin:imax] * bza[imin:imax]) / nzasum
@@ -464,12 +468,13 @@ def sigma_mnu_two_tracers_full(
             for ii, r in enumerate(idx_map):
                 for jj, c in enumerate(idx_map):
                     F_full[r, c] = F2[ii, jj]
-            Finv2 = np.linalg.inv(F2)
             list_zbin.append(zbin)
-            list_sigma_ba.append(Finv2[0, 0]**0.5)
-            list_sigma_bb.append(np.inf)
-            list_sigma_mnu.append(Finv2[1, 1]**0.5)
             Flist.append(F_full)
+            _apply_priors(F_full, prior_params, param_order_2t)
+            Finv = np.linalg.inv(F_full)
+            list_sigma_ba.append(Finv[0, 0]**0.5)
+            list_sigma_bb.append(np.inf)
+            list_sigma_mnu.append(Finv[2, 2]**0.5)
 
         elif nzbsum > 0:
             bgb = np.sum(nzb[imin:imax] * bzb[imin:imax]) / nzbsum
@@ -486,31 +491,29 @@ def sigma_mnu_two_tracers_full(
             for ii, r in enumerate(idx_map):
                 for jj, c in enumerate(idx_map):
                     F_full[r, c] = F2[ii, jj]
-            Finv2 = np.linalg.inv(F2)
             list_zbin.append(zbin)
-            list_sigma_ba.append(np.inf)
-            list_sigma_bb.append(Finv2[0, 0]**0.5)
-            list_sigma_mnu.append(Finv2[1, 1]**0.5)
             Flist.append(F_full)
+            _apply_priors(F_full, prior_params, param_order_2t)
+            Finv = np.linalg.inv(F_full)
+            list_sigma_ba.append(np.inf)
+            list_sigma_bb.append(Finv[1, 1]**0.5)
+            list_sigma_mnu.append(Finv[2, 2]**0.5)
 
-    zeff = (
-        np.sum(zarray * nza) * Na_degm2
-        + np.sum(zarray * nzb) * Nb_degm2
-    ) / (Na_degm2 + Nb_degm2)
+    zeff = (np.sum(zarray * nza) * Na_degm2 + np.sum(zarray * nzb) * Nb_degm2) / (Na_degm2 + Nb_degm2)
 
     Ftot = np.sum(np.array(Flist), axis=0)
+
+    Ftot_no_prior = Ftot.copy()
 
     # --- apply prior ONCE to the total Fisher matrix ---
     _apply_priors(Ftot, prior_params, param_order_2t)
 
     # marginalise once, keep [ba, bb, Mnu] (indices 0, 1, 2)
     Ftot_inv  = np.linalg.inv(Ftot)
-    Ftot_marg = np.linalg.inv(Ftot_inv[np.ix_([0, 1, 2], [0, 1, 2])])
-    Ftot_marg_inv = np.linalg.inv(Ftot_marg)
 
-    sigma_ba_eff  = Ftot_marg_inv[0, 0]**0.5
-    sigma_bb_eff  = Ftot_marg_inv[1, 1]**0.5
-    sigma_mnu_eff = Ftot_marg_inv[2, 2]**0.5
+    sigma_ba_eff  = Ftot_inv[0, 0]**0.5
+    sigma_bb_eff  = Ftot_inv[1, 1]**0.5
+    sigma_mnu_eff = Ftot_inv[2, 2]**0.5
 
     if not return_F:
         return (list_zbin,
@@ -519,4 +522,4 @@ def sigma_mnu_two_tracers_full(
     else:
         return (list_zbin,
                 list_sigma_ba, list_sigma_bb, list_sigma_mnu,
-                zeff, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, Ftot)
+                zeff, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, Ftot_no_prior)

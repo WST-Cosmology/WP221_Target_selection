@@ -13,6 +13,28 @@ import fisher_matrix_local_png
 import fisher_matrix_bao_SuEisenstein
 import fisher_matrix_rsd
 import fisher_matrix_neutrino_mass
+import fisher_matrix_neutrino_mass_full_cosmo
+
+def marginalize_first_m(F, n):
+    """
+    Marginalize over the FIRST (total - n) parameters, keeping the LAST n.
+
+    F: (total, total) Fisher matrix, ordering (marginalized_params..., kept_params...)
+    n: number of parameters to KEEP (the last n rows/cols)
+
+    Returns: (n, n) Fisher matrix for the last n parameters,
+             marginalized over everything before them.
+    """
+    F = np.asarray(F)
+    total = F.shape[0]
+    m = total - n   # number of params being marginalized out (the first m)
+
+    A = F[m:, m:]      # kept-kept block (n x n)      <- last n params
+    C = F[m:, :m]      # kept-marginalized block (n x m)
+    B = F[:m, :m]      # marginalized-marginalized block (m x m)  <- first m params
+
+    F_marg = A - C @ np.linalg.inv(B) @ C.T
+    return F_marg
 
 from itertools import product
 import numpy as np
@@ -25,7 +47,7 @@ def run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo, whic
         list_zbin_bao, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff, Fisher_bao = fisher_matrix_bao_SuEisenstein.sigma_Da_H_single_tracer(z,
                                                                                                                     np.interp(z, zarray, nz),
                                                                                                                     np.interp(z, zarray, bz),
-                                                                                                                    S_survey,nspec_deg2,Deltaz=0.2,
+                                                                                                                    S_survey,nspec_deg2,Deltaz=zarray[-1] - zarray[0],
                                                                                                                     cosmo=cosmo, return_fisher=True)
         results['bao'] = [ list_zbin_bao, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff, Fisher_bao]
 
@@ -46,12 +68,22 @@ def run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo, whic
         results['rsd'] = [list_zbin_rsd, list_sigma_bs8, list_sigma_fs8, zeff, sigma_bs8_eff, sigma_fs8_eff]
 
     if 'neutrinos' in which_param:
-        list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff=fisher_matrix_neutrino_mass.sigma_mnu_single_tracer(z,
+        list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff, Ftot_Mnu =fisher_matrix_neutrino_mass_full_cosmo.sigma_mnu_single_tracer_full(z,
                                                                                                                 np.interp(z, zarray, nz),
                                                                                                                 np.interp(z, zarray, bz),
                                                                                                                 S_survey,nspec_deg2,Deltaz=0.2,
-                                                                                                                kmax=0.1,cosmo=cosmo)
-        results['neutrinos'] = [list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff]
+                                                                                                                prior_params=['Mnu', 'H0', 'omega_c', 'omega_b', 'ns', 'As'],
+                                                                                                                kmax=0.1,cosmo=cosmo, return_F=True)
+        results['neutrinos'] = [list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff, marginalize_first_m(Ftot_Mnu, 6)]
+
+    # if 'neutrinos' in which_param:
+    #     list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff, Ftot_Mnu =fisher_matrix_neutrino_mass.sigma_mnu_single_tracer(z,
+    #                                                                                                             np.interp(z, zarray, nz),
+    #                                                                                                             np.interp(z, zarray, bz),
+    #                                                                                                             S_survey,nspec_deg2,Deltaz=0.2,
+    #                                                                                                        
+    #                                                                                                             kmax=0.1,cosmo=cosmo, return_F=True)
+    #     results['neutrinos'] = [list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff, sigma_b_eff, sigma_mnu_eff, marginalize_first_m(Ftot_Mnu, 1)]
 
     return results
 
@@ -67,15 +99,25 @@ def run_forecast_two_tracers(z, zarray, nz1, nz2, bz1, bz2, S_survey, nspec1_deg
         results['fnl'] = [list_zbin_fnl, list_sigma_fnl, zeff_fnl, sigma_fnl_eff]
     
     if 'neutrinos' in which_param:
-        list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff = fisher_matrix_neutrino_mass.sigma_mnu_two_tracers(z,
+        list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, Ftot_Mnu = fisher_matrix_neutrino_mass_full_cosmo.sigma_mnu_two_tracers_full(z,
                                                                             np.interp(z, zarray, nz1), np.interp(z, zarray, nz2),
                                                                             np.interp(z, zarray, bz1), np.interp(z, zarray, bz2),
                                                                             S_survey, nspec1_deg2, nspec2_deg2, Deltaz=0.2,
-                                                                            kmax=0.1,
-                                                                            Sigma_mnu_fid=0.06, dSigma=0.06,
+                                                                            kmax=0.1, prior_params=['Mnu', 'H0', 'omega_c', 'omega_b', 'ns', 'As'],
                                                                             cosmo=cosmo, Nk=200,
-                                                                            return_F=False)
-        esults['neutrinos'] = [list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff]
+                                                                            return_F=True)
+        results['neutrinos'] = [list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, marginalize_first_m(Ftot_Mnu, 6)]
+
+    # if 'neutrinos' in which_param:
+    #     list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, Ftot_Mnu = fisher_matrix_neutrino_mass.sigma_mnu_two_tracers(z,
+    #                                                                         np.interp(z, zarray, nz1), np.interp(z, zarray, nz2),
+    #                                                                         np.interp(z, zarray, bz1), np.interp(z, zarray, bz2),
+    #                                                                         S_survey, nspec1_deg2, nspec2_deg2, Deltaz=0.2,
+    #                                                                         kmax=0.1, 
+    #                                                                         Sigma_mnu_fid=0.06, dSigma=0.06,
+    #                                                                         cosmo=cosmo, Nk=200,
+    #                                                                         return_F=True)
+    #     results['neutrinos'] = [list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff_mnu, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, marginalize_first_m(F_Mnu, 1)]
 
     if 'rsd' in which_param:
         list_zbin_rsd, list_sigma_bAs8, list_sigma_bBs8, list_sigma_fs8, zeff_rsd, sigma_bAs8_eff, sigma_bBs8_eff, sigma_fs8_eff = fisher_matrix_rsd.sigma_rsd_two_tracers(
@@ -137,6 +179,7 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
         forecasts[tracer+'_zeff_Mnu'] = []
         forecasts[tracer+'_list_sigma_Mnu'] = []
         forecasts[tracer+'_sigma_Mnu_eff'] = []
+        forecasts[tracer+'_Fisher_matrix_Mnu_eff'] = []
 
         forecasts[tracer+'_list_zbin_rsd'] = []
         forecasts[tracer+'_zeff_rsd'] = []
@@ -157,11 +200,7 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
                 nz_full_range = nz_distrib_frame[j]
                 nz = nz_distrib_frame[j][mask_redshift_eval_range]
                 nspec_deg2 = nspec_deg2_frame[j] * np.trapz(nz_full_range[mask_redshift_eval_range], z_centers[mask_redshift_eval_range])/np.trapz(nz_full_range, z_centers)
-                print(bz_distrib_frame[j])
                 bz = bz_distrib_frame[j][mask_redshift_eval_range]
-
-                print(zarray, nz, bz)
-    
                 # BA0 PS constraints on Da and H
                 results = run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo,which_param=which_param)
    
@@ -189,11 +228,12 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
                     forecasts[tracer+'_sigma_fnl_eff'].append(sigma_fnl_eff)
                     
                 if 'neutrinos' in which_param: 
-                    list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff_mnu, sigma_b_eff, sigma_mnu_eff = results['neutrinos']
+                    list_zbin_mnu, list_sigma_b, list_sigma_mnu, zeff_mnu, sigma_b_eff, sigma_mnu_eff, F_Mnu = results['neutrinos']
                     forecasts[tracer+'_list_zbin_Mnu'].append(list_zbin_mnu)
                     forecasts[tracer+'_zeff_Mnu'].append(zeff_mnu)
                     forecasts[tracer+'_list_sigma_Mnu'].append(list_sigma_mnu)
                     forecasts[tracer+'_sigma_Mnu_eff'].append(sigma_mnu_eff)
+                    forecasts[tracer+'_Fisher_matrix_Mnu_eff'].append(F_Mnu)
                     
                 if 'rsd' in which_param: 
                     list_zbin_rsd, list_sigma_bs8, list_sigma_fs8, zeff_rsd, sigma_bs8_eff, sigma_fs8_eff = results['rsd']
@@ -206,7 +246,7 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
 
                 if mag_max < mag_separation:
                     nz1 = nz_distrib_frame[j][mask_redshift_eval_range]
-                    nspec1_deg2 = nspec_deg2_frame[j]
+                    nspec1_deg2 = nspec_deg2_frame[j]  * np.trapz(nz_distrib_frame[j][mask_redshift_eval_range], z_centers[mask_redshift_eval_range])/np.trapz(nz_distrib_frame[j], z_centers)
                     bz1 = bz_distrib_frame[j][mask_redshift_eval_range]
 
                     results1 = run_forecast_one_tracer(z, zarray, nz1, bz1, S_survey, nspec1_deg2, cosmo, which_param=which_param)
@@ -224,11 +264,12 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
                         rho_bao_eff_joint = Cov[0, 1] / (sigma_Da_eff * sigma_H_eff)
                         
                     if 'neutrinos' in which_param: 
-                        list_zbin_mnu_1, list_sigma_b_1, list_sigma_mnu_1, zeff_mnu_1, sigma_b_eff_1, sigma_mnu_eff_1 = results1['neutrinos']
+                        list_zbin_mnu_1, list_sigma_b_1, list_sigma_mnu_1, zeff_mnu_1, sigma_b_eff_1, sigma_mnu_eff_1, F_Mnu_1 = results1['neutrinos']
+                        F_Mnu_joint = F_Mnu_1
                         sigma_mnu_eff_joint = sigma_mnu_eff_1
                         
                     if 'rsd' in which_param: 
-                        list_zbin_rsd_1, list_sigma_bs8_1, list_sigma_fs8_1, zeff_rsd_1, sigma_bs8_eff_1, sigma_fs8_eff_1 = results1['rsd']
+                        list_zbin_rsd_1, list_sigma_bs8_1, list_sigma_fs8, zeff_rsd_1, sigma_bs8_eff_1, sigma_fs8_eff_1 = results1['rsd']
                         sigma_fs8_eff_joint = sigma_fs8_eff_1
                 else: 
 
@@ -238,63 +279,95 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
                         mag_max_first_bin = mag_centers_frame[j - 1]
                         nz1 = nz_distrib_frame[j - 1][mask_redshift_eval_range]
                         nspec1_deg2 = nspec_deg2_frame[j - 1]
+                        nspec1_deg2 *= np.trapz(nz_distrib_frame[j - 1][mask_redshift_eval_range], z_centers[mask_redshift_eval_range])/np.trapz(nz_distrib_frame[j - 1], z_centers)
                         bz1 = bz_distrib_frame[index_max_mag_first_bin][mask_redshift_eval_range]
                         has_cross_mag_2bin = True
 
                     nz2 = nz_distrib_frame[j][mask_redshift_eval_range] - nz_distrib_frame[index_max_mag_first_bin][mask_redshift_eval_range] #low magn bin
-                    nspec2_deg2 = nspec_deg2_frame[j] - nspec_deg2_frame[index_max_mag_first_bin]
+                    nspec2_deg2 = (nspec_deg2_frame[j] - nspec_deg2_frame[index_max_mag_first_bin])
+                    nspec2_deg2 *= np.trapz(nz2, z_centers[mask_redshift_eval_range])/np.trapz(nz_distrib_frame[j] - nz_distrib_frame[index_max_mag_first_bin], z_centers)
                     bz2 = bz_distrib_frame[j][mask_redshift_eval_range]
 
                     #alone constraints
-                    results2 = run_forecast_one_tracer(z, zarray, nz2, bz2, S_survey, nspec2_deg2, cosmo, which_param=which_param)
+                    results2 = run_forecast_one_tracer(z, zarray, nz2, bz2, S_survey, nspec2_deg2, cosmo, which_param=[x for x in which_param if x not in ["neutrinos", 'fnl', 'rsd']])
                     results12 = run_forecast_two_tracers(z, zarray, nz1, nz2, bz1, bz2, S_survey, nspec1_deg2, nspec2_deg2, cosmo, which_param=which_param)
-
-                    if 'fnl' in which_param: 
-                        list_zbin_fnl_2, list_sigma_fnl_2, zeff_fnl_2, sigma_fnl_eff_2 = results2['fnl']
-                        list_zbin_fnl, list_sigma_fnl, zeff, sigma_fnl_eff = results12['fnl']
-                        sigma_fnl_eff_joint = sigma_fnl_eff
-                        forecasts[tracer+'_list_zbin_fnl'].append(list_zbin_fnl_1)
-                        forecasts[tracer+'_zeff_fnl'].append(zeff_fnl_1)
-                        forecasts[tracer+'_list_sigma_fnl'].append(list_sigma_fnl_1)
-                        forecasts[tracer+'_sigma_fnl_eff'].append(sigma_fnl_eff_joint)
                         
-                    if 'bao' in which_params:
+                    if 'bao' in which_param:
                         list_zbin_bao_2, list_sigma_Da_2,list_sigma_H_2, zeff_bao_2, sigma_Da_eff_2, sigma_H_eff_2, Fisher_bao_2 = results2['bao']
                         Fisher_bao_joint = Fisher_bao_1 + Fisher_bao_2
                         Cov = np.linalg.inv(Fisher_bao_joint)
                         sigma_Da_eff_joint = np.sqrt(Cov[0, 0])
                         sigma_H_eff_joint  = np.sqrt(Cov[1, 1])
                         rho_bao_eff_joint = Cov[0, 1] / (sigma_Da_eff_joint * sigma_H_eff_joint)
-                        forecasts[tracer+'_list_zbin_Da'].append(list_zbin_bao_1)
-                        forecasts[tracer+'_zeff_Da'].append(zeff_bao_1)
-                        forecasts[tracer+'_list_sigma_Da'].append(None)
-                        forecasts[tracer+'_sigma_Da_eff'].append(sigma_Da_eff_joint)
-            
-                        forecasts[tracer+'_list_zbin_H'].append(list_zbin_bao_1)
-                        forecasts[tracer+'_zeff_H'].append(zeff_bao_1)
-                        forecasts[tracer+'_list_sigma_H'].append(None)
-                        forecasts[tracer+'_sigma_H_eff'].append(sigma_H_eff_joint)
-                        forecasts[tracer+'_rho_DaH_eff'].append(rho_bao_eff_joint)
 
-                    if 'neutrinos' in which_params:
-                        list_zbin_mnu_2, list_sigma_b_2, list_sigma_mnu_2, zeff_mnu_2, sigma_b_eff_2, sigma_mnu_eff_2 = results2['neutrinos']
-                        list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff = results12['neutrinos'] 
+                    if 'neutrinos' in which_param:
+                        #list_zbin_mnu_2, list_sigma_b_2, list_sigma_mnu_2, zeff_mnu_2, sigma_b_eff_2, sigma_mnu_eff_2, F_Mnu_1 = results2['neutrinos']
+                        list_zbin_mnu, list_sigma_ba, list_sigma_bb, list_sigma_mnu, zeff, sigma_ba_eff, sigma_bb_eff, sigma_mnu_eff, F_Mnu_12 = results12['neutrinos'] 
                         sigma_mnu_eff_joint = sigma_mnu_eff
-                        forecasts[tracer+'_list_zbin_Mnu'].append(list_zbin_mnu_1)
-                        forecasts[tracer+'_zeff_Mnu'].append(zeff_mnu_1)
-                        forecasts[tracer+'_list_sigma_Mnu'].append(None)
-                        forecasts[tracer+'_sigma_Mnu_eff'].append(sigma_mnu_eff_joint)
+                        F_Mnu_joint = F_Mnu_12
 
-                    if 'rsd' in which_params:
-                        list_zbin_rsd_2, list_sigma_bs8_2, list_sigma_fs8_2, zeff_rsd_2, sigma_bs8_eff_2, sigma_fs8_eff_2 = results2['rsd']
+
+                    if 'rsd' in which_param:
+                        #list_zbin_rsd_2, list_sigma_bs8_2, list_sigma_fs8_2, zeff_rsd_2, sigma_bs8_eff_2, sigma_fs8_eff_2 = results2['rsd']
                         list_zbin_rsd, list_sigma_bAs8, list_sigma_bBs8, list_sigma_fs8, zeff_rsd, sigma_bAs8_eff, sigma_bBs8_eff, sigma_fs8_eff = results12['rsd']
                         sigma_fs8_eff_joint = sigma_fs8_eff
-                        forecasts[tracer+'_list_zbin_rsd'].append(list_zbin_rsd_1)
-                        forecasts[tracer+'_zeff_rsd'].append(zeff_rsd_1)
-                        forecasts[tracer+'_list_sigma_rsd'].append(None)
-                        forecasts[tracer+'_sigma_rsd_eff'].append(sigma_fs8_eff_joint)
+
+                    if 'fnl' in which_param: 
+                        #list_zbin_fnl_2, list_sigma_fnl_2, zeff_fnl_2, sigma_fnl_eff_2 = results2['fnl']
+                        list_zbin_fnl, list_sigma_fnl, zeff, sigma_fnl_eff = results12['fnl']
+                        sigma_fnl_eff_joint = sigma_fnl_eff
+
+                        
+                if 'bao' in which_param:
+                    forecasts[tracer+'_list_zbin_Da'].append(list_zbin_bao_1)
+                    forecasts[tracer+'_zeff_Da'].append(zeff_bao_1)
+                    forecasts[tracer+'_list_sigma_Da'].append(None)
+                    forecasts[tracer+'_sigma_Da_eff'].append(sigma_Da_eff_joint)
+        
+                    forecasts[tracer+'_list_zbin_H'].append(list_zbin_bao_1)
+                    forecasts[tracer+'_zeff_H'].append(zeff_bao_1)
+                    forecasts[tracer+'_list_sigma_H'].append(None)
+                    forecasts[tracer+'_sigma_H_eff'].append(sigma_H_eff_joint)
+                    forecasts[tracer+'_rho_DaH_eff'].append(rho_bao_eff_joint)
+
+                if 'neutrinos' in which_param:
+                    forecasts[tracer+'_list_zbin_Mnu'].append(list_zbin_mnu_1)
+                    forecasts[tracer+'_zeff_Mnu'].append(zeff_mnu_1)
+                    forecasts[tracer+'_list_sigma_Mnu'].append(None)
+                    forecasts[tracer+'_sigma_Mnu_eff'].append(sigma_mnu_eff_joint)
+                    forecasts[tracer+'_Fisher_matrix_Mnu_eff'].append(F_Mnu_joint)
+
+                if 'rsd' in which_param:
+                    forecasts[tracer+'_list_zbin_rsd'].append(list_zbin_rsd_1)
+                    forecasts[tracer+'_zeff_rsd'].append(zeff_rsd_1)
+                    forecasts[tracer+'_list_sigma_rsd'].append(list_sigma_fs8)
+                    forecasts[tracer+'_sigma_rsd_eff'].append(sigma_fs8_eff_joint)
+
+                if 'fnl' in which_param:
+                    forecasts[tracer+'_list_zbin_fnl'].append(list_zbin_fnl_1)
+                    forecasts[tracer+'_zeff_fnl'].append(zeff_fnl_1)
+                    forecasts[tracer+'_list_sigma_fnl'].append(list_sigma_fnl_1)
+                    forecasts[tracer+'_sigma_fnl_eff'].append(sigma_fnl_eff_joint)
 
     return forecasts
+
+def build_total_survey_information_metrics_neutrinos(config_survey_update, forecasts_survey, which_param=None):
+    tracers = config_survey_update['tracers']
+    shape = tuple(len(forecasts_survey[tracer + '_mag_max_eval']) for tracer in tracers)
+    Information_Mnu = np.zeros(shape)
+
+    for idx in itertools.product(*[range(s) for s in shape]):
+        
+        tracer_idx = list(zip(tracers, idx))  # [(tracer, i), ...]
+
+        Information_Mnu[idx] = np.sum([
+            1.0 / forecasts_survey[f"{tracer}_sigma_Mnu_eff"][m]**2
+            for tracer, m in zip(tracers, idx)])
+    results = {
+       }
+    results['total_survey_fisher_information_Mnu']= Information_Mnu
+
+    return results
 
 def build_total_survey_information_metrics(config_survey_update, forecasts_survey, which_param=None):
     tracers = config_survey_update['tracers']

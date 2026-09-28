@@ -90,7 +90,7 @@ config_survey_grey_magmax = {'survey_type': 'Grey_MagMax',
                                       path+f'COSMOS_H_MagLim_WST.npz'],
                  'tracers' : ['MagMax',
                               'MagMax_lowz', 'MagMax_midz', 'MagMax_highz'],
-                 'limiting_mag_band': ['H', 'H', 'H', 'H'],
+                 'limiting_mag_band': [ 'H','H', 'H', 'H'],
                  'color' : ['cyan',
                             'b', 'darkblue', 'dodgerblue']}
 
@@ -125,28 +125,46 @@ config_survey_dark_lbg_only = {'survey_type': 'Dark_lbg_only',
                  'tracer_N_zm_file' : [path+f'COSMOS_LBG_udropout_highz.npz',
                                        path+f'COSMOS_LBG_gdropout.npz', 
                                        path+f'COSMOS_LBG_rdropout.npz'],
+                 'tracers' : ['LBGu', 
+                              'LBGg', 'LBGr'],
+                 'limiting_mag_band': ['r', 'i', 'z'],
+                    'color' : ['m','g','r']}
+
+config_survey_dark_lbg_only_bao = {'survey_type': 'Dark_lbg_only_bao',
+                 'N_fibres': 30000,
+                      'S_FoV': 3,
+                 'S_survey': 18000,
+                 'exposure_time': 1000, 
+                 'observation_fraction': 0.8 * 0.5 * 0.45,
+                 'tracer_N_zm_file' : [path+f'COSMOS_LBG_udropout_highz.npz',
+                                       path+f'COSMOS_LBG_gdropout.npz', 
+                                       path+f'COSMOS_LBG_rdropout.npz'],
                  'tracers' : ['LBGu', 'LBGg', 'LBGr'],
                  'limiting_mag_band': ['r', 'i', 'z'],
                     'color' : ['m','g','r']}
 
 mag_max_eval_range = {'Bright_desilike': [[19, 21]],
-                      'Grey_desilike'  : [[21, 22], [20, 23], [23,25]],
+                      'Grey_desilike'  : [[21, 22], [20, 23], [23,25.5]],
                       'Bright_desilike_bao': [[19, 21]],
-                      'Grey_desilike_bao'  : [[21, 22], [20, 23], [23,25]],
-                      'Grey_MagMax': [[19, 22], 
+                      'Grey_desilike_bao'  : [[21, 22], [20, 23], [23,25.5]],
+                      'Grey_MagMax': [[19, 22],
                                       [19, 22], [19, 22], [19, 22]], 
                       'Dark_lbg_only'  : [[24.2, 26], [24.2, 26], [24.2, 26]],
+                       'Dark_lbg_only_bao'  : [[24.2, 26], [24.2, 26], [24.2, 26]],
                      'Dark_qso_only'  : [[23, 25]],
                      'Dark_qso_only_bao'  : [[23, 25]]}
 
-redshift_eval_range = {'Bright_desilike': [[0, 1.5]],
-                      'Grey_desilike'  :  [[0, 2], [0, 2], [0, 2]],
+redshift_eval_range = {'Bright_desilike': [[0, 1.55]],
+                      'Grey_desilike'  :  [[0, 1.55], [0, 1.55], [0, 1.55]],
                       'Bright_desilike_bao': [[0, 0.4]],
-                      'Grey_desilike_bao'  :  [[0.4, 0.7], [0.7, 1.2], [1.2, 1.6]],
-                      'Grey_MagMax': [[0, 1.5], [0., 0.5], [0.5, 1.], [1., 1.5]], 
-                      'Dark_lbg_only'  :  [[2, 4.5], [2.5, 5.5], [4, 6]],
+                      'Grey_desilike_bao'  :  [[0.4, 0.7], [0.7, 1.1], [1.1, 1.55]],
+                      'Grey_MagMax': [[0., 1.55],[0., 0.7], [0.7, 1.1], [1.1, 1.55]], 
+                      'Dark_lbg_only'  :  [[2.5, 4], 
+                                           [3, 4.5], 
+                                           [4.5, 5.5]],
+                       'Dark_lbg_only_bao'  :  [[2.5, 3.5], [3.5, 4.5], [4.5, 5.5]],
                       'Dark_qso_only'  : [[0.8, 3.1]],
-                      'Dark_qso_only_bao'  : [[1.6, 3.1]]}
+                      'Dark_qso_only_bao'  : [[1.55, 2.1]]}
 
 multi_mag_bin_approach = {'Bright_desilike': [False],
                           'Grey_desilike'  :  [False, False, False, False],
@@ -154,11 +172,16 @@ multi_mag_bin_approach = {'Bright_desilike': [False],
                           'Grey_desilike_bao'  :  [False, False, False, False],
                           'Grey_MagMax': [False,False,False,False], 
                           'Dark_lbg_only'  : [True, True, True],
+                           #  'Dark_lbg_only'  : [False, False, False],
+                          'Dark_lbg_only_bao'  : [True, True, True],
                          'Dark_qso_only'  : [False],
                          'Dark_qso_only_bao'  : [False]}
 
-config_surveys = [config_survey_grey_desilike_bao]
+#config_surveys = [config_survey_grey_magmax, config_survey_bright_desilike_bao, config_survey_grey_desilike_bao]#, config_survey_dark_qso_only_bao]
+#config_surveys = [config_survey_grey_magmax, config_survey_grey_desilike_bao, config_survey_bright_desilike_bao]
+config_surveys = [config_survey_dark_lbg_only]
 
+which_param=['fnl', 'neutrinos']
 
 for i, config_survey in enumerate(config_surveys):
 
@@ -172,20 +195,19 @@ for i, config_survey in enumerate(config_surveys):
                                                                                redshift_eval_range =redshift_eval_range[survey], 
                                                                                mag_max_eval_range=mag_max_eval_range[survey],
                                                                                 multi_mag_bin_approach=multi_mag_bin_approach[survey],
-                                                                                       which_param=['bao','rsd'])
+                                                                                       which_param=which_param)
 
-    #FnP_tracer = _survey_design_science_metrics.Survey_design_nP_metrics(config_survey_update, cosmo, 
-    #                                                                           redshift_eval_range =redshift_eval_range[survey], 
-    #                                                                           mag_max_eval_range=mag_max_eval_range[survey],
-    #                                                                            multi_mag_bin_approach=multi_mag_bin_approach[survey])
-
-    total_Informations = _survey_design_science_metrics.build_total_survey_information_metrics(config_survey_update, per_tracer_forecasts, which_param=['bao','rsd'])
+    total_Informations = _survey_design_science_metrics.build_total_survey_information_metrics(config_survey_update, per_tracer_forecasts, which_param=which_param)
 
     file_to_save = {}
     file_to_save['config_survey'] = config_survey_update
     file_to_save['per_tracer_forecasts'] = per_tracer_forecasts
     file_to_save['total_survey_Informations'] = total_Informations
 
-    save_pickle(file_to_save, './telescope_and_science_metrics/'+'survey_design_' + survey + '.pkl')
+    params = ''
+    for p in which_param:
+        params += p + '_'
+
+    save_pickle(file_to_save, './telescope_and_science_metrics/'+'survey_design_' + survey + '_' + params + 'forecast.pkl')
 
     

@@ -28,7 +28,6 @@ def bias_magmax(redshift, mag):
 
 def bias_qso(redshift, mag):
     return 0.237 * (1 + redshift)**2 + 0.771
-    #return 0.237 * ((1 + redshift)**2 - 6.565) + 2.328
 
 def bias_lbg(redshift, mag):
     #from https://arxiv.org/pdf/2106.09713
