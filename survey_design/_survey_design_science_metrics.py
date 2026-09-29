@@ -351,24 +351,6 @@ def Survey_design_science_metrics(config_survey_update, cosmo, redshift_eval_ran
 
     return forecasts
 
-def build_total_survey_information_metrics_neutrinos(config_survey_update, forecasts_survey, which_param=None):
-    tracers = config_survey_update['tracers']
-    shape = tuple(len(forecasts_survey[tracer + '_mag_max_eval']) for tracer in tracers)
-    Information_Mnu = np.zeros(shape)
-
-    for idx in itertools.product(*[range(s) for s in shape]):
-        
-        tracer_idx = list(zip(tracers, idx))  # [(tracer, i), ...]
-
-        Information_Mnu[idx] = np.sum([
-            1.0 / forecasts_survey[f"{tracer}_sigma_Mnu_eff"][m]**2
-            for tracer, m in zip(tracers, idx)])
-    results = {
-       }
-    results['total_survey_fisher_information_Mnu']= Information_Mnu
-
-    return results
-
 def build_total_survey_information_metrics(config_survey_update, forecasts_survey, which_param=None):
     tracers = config_survey_update['tracers']
     shape = tuple(len(forecasts_survey[tracer + '_mag_max_eval']) for tracer in tracers)
