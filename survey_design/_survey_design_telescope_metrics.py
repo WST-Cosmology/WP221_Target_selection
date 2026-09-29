@@ -169,10 +169,11 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
             z_centers = z_axis_interp
 
             mask_mag_max_eval_range = (mag_centers >= mag_max_eval_range[i][0])*(mag_centers <= mag_max_eval_range[i][1]) 
+            index_mag_range = np.arange(len(mag_centers))[mask_mag_max_eval_range]
             m_range_restricted = np.array(mag_centers)[mask_mag_max_eval_range]
-            for p, m in enumerate(m_range_restricted):
-                n_target.append(((0.7)/(1-0.3))*np.trapz(f[:,p], z_centers))
-                n_spec.append(0.7*np.trapz(f[:,p], z_centers))
+            for p, m in zip(index_mag_range, m_range_restricted):
+                n_target.append(((0.77)/(1-0.33))*np.trapz(f[:,p], z_centers))
+                n_spec.append(0.66*((0.77)/(1-0.33))*np.trapz(f[:,p], z_centers))
                 n_pointings.append(np.trapz(f[:,p], z_centers))
                 n_specz_redshift.append(f[:,p])
                 n_target_redshift.append(f[:,p])
