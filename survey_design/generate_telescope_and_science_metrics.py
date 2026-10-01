@@ -8,7 +8,6 @@ import fisher_matrix_bao_SuEisenstein
 
 import _tracer_spectroscopic_efficiency
 import _survey_design_telescope_metrics
-import _surveys
 import _survey_design_science_metrics
 
 import pickle
@@ -61,7 +60,7 @@ config_survey_grey_desilike = {'survey_type': 'Grey_desilike',
                  'tracer_N_zm_file' : [path+f'LS_BG_FAINT_WST.npz', 
                                        path+f'LS_LRG_WST.npz',
                                        path+f'LS_ELG_WST.npz'],
-                 'tracers' : ['BG_faint', 'LRG', 'ELG'],
+                 'tracers' : ['BG_grey', 'LRG', 'ELG'],
                  'limiting_mag_band': ['r', 'z', 'g'],
                  'color' : ['darkorange', 'brown','peru']}
 
@@ -74,7 +73,7 @@ config_survey_grey_desilike_bao = {'survey_type': 'Grey_desilike_bao',
                  'tracer_N_zm_file' : [path+f'LS_BG_FAINT_WST.npz', 
                                        path+f'LS_LRG_WST.npz',
                                        path+f'LS_ELG_WST.npz'],
-                 'tracers' : ['BG_faint', 'LRG', 'ELG'],
+                 'tracers' : ['BG_grey', 'LRG', 'ELG'],
                  'limiting_mag_band': ['r', 'z', 'g'],
                  'color' : ['darkorange', 'brown','peru']}
 
@@ -177,11 +176,10 @@ multi_mag_bin_approach = {'Bright_desilike': [False],
                          'Dark_qso_only'  : [False],
                          'Dark_qso_only_bao'  : [False]}
 
-#config_surveys = [config_survey_grey_magmax, config_survey_bright_desilike_bao, config_survey_grey_desilike_bao]#, config_survey_dark_qso_only_bao]
-#config_surveys = [config_survey_grey_magmax, config_survey_grey_desilike_bao, config_survey_bright_desilike_bao]
-config_surveys = [config_survey_dark_lbg_only]
+config_surveys = [config_survey_grey_magmax, config_survey_bright_desilike, config_survey_grey_desilike,config_survey_grey_desilike_bao, config_survey_bright_desilike_bao]
+#config_surveys = [config_survey_dark_qso_only, config_survey_dark_qso_only_bao]
 
-which_param=['fnl', 'neutrinos']
+which_param=['bao','rsd']
 
 for i, config_survey in enumerate(config_surveys):
 

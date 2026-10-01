@@ -38,7 +38,7 @@ def bias_lbg(redshift, mag):
 
 def linear_bias(redshift, mag, tracer = 'BG_faint'):
 
-    if tracer == 'BG_faint' or tracer == 'BG_bright': return bias_bg(redshift, mag)
+    if tracer == 'BG_faint' or tracer == 'BG_bright' or tracer == 'BG_grey': return bias_bg(redshift, mag)
     if tracer == 'LRG': return bias_lrg(redshift, mag)
     if tracer == 'ELG': return bias_elg(redshift, mag)
     if 'MagMax' in tracer.split('_'): return bias_magmax(redshift, mag)

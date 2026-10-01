@@ -82,6 +82,7 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
     S_survey = config_survey['S_survey']
     N_fibres = config_survey['N_fibres']
     S_FoV = config_survey['S_FoV']
+
     t_exp = config_survey['exposure_time'] 
     observational_fraction = config_survey['observation_fraction']
     config_survey_update = copy.deepcopy(config_survey)
@@ -92,6 +93,8 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
             mag_centers = N_zm['mag_center']
             z_centers = N_zm['z_center']
             n_target_count = N_zm['object_count'] / N_zm['surface_deg2']
+            if tracer == 'LRG':
+                n_target_count[:,mag_centers<= 20] = 0
             Efficiency = np.zeros([len(z_centers), len(mag_centers)])
             n_pass = np.zeros([len(z_centers), len(mag_centers)])
             bias = np.zeros([len(z_centers), len(mag_centers)])
@@ -113,7 +116,10 @@ def Survey_design_telescope_metrics(config_survey, mag_max_eval_range = None, ma
             
             for m in np.array(mag_centers)[mask_mag_max_eval_range]:
 
-                n_target.append(np.sum(np.sum(n_target_count[:, mag_centers <= m], axis=1), axis=0))
+                #n_target.append(np.sum(np.sum(n_target_count[:, mag_centers <= m], axis=1), axis=0))
+                a = np.sum(n_target_count, axis=0)
+                b = np.cumsum(a[mag_centers <= m])[-1]
+                n_target.append(b)
                 n_spec.append(np.sum(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1), axis=0))
                 n_pointings.append(np.sum(np.sum((n_target_count * n_pass)[:, mag_centers <= m], axis=1), axis=0))
                 n_specz_redshift.append(np.sum((n_target_count * Efficiency)[:, mag_centers <= m], axis=1))

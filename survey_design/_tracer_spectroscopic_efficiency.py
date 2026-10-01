@@ -3,6 +3,7 @@ import numpy as np
 def E_wst(redshift, mag, tracer = None):
     if tracer == 'BG_faint': return E_wst_bg_faint(redshift, mag)
     if tracer == 'BG_bright': return E_wst_bg_bright(redshift, mag)
+    if tracer == 'BG_grey': return E_wst_bg_grey(redshift, mag)
     if tracer == 'ELG': return E_wst_elg(redshift, mag)
     if tracer == 'LRG': return E_wst_lrg(redshift, mag)
     if 'MagMax' in tracer.split('_'): return E_wst_magmax(redshift, mag)
@@ -14,6 +15,7 @@ def E_wst(redshift, mag, tracer = None):
 def n_pass_wst(redshift, mag, tracer = None):
     if tracer == 'BG_faint': return n_pass_wst_bg_faint(redshift, mag)
     if tracer == 'BG_bright': return n_pass_wst_bg_bright(redshift, mag)
+    if tracer == 'BG_grey': return n_pass_wst_bg_grey(redshift, mag)
     if tracer == 'ELG': return n_pass_wst_elg(redshift, mag)
     if tracer == 'LRG': return n_pass_wst_lrg(redshift, mag)
     if 'MagMax' in tracer.split('_'): return n_pass_wst_magmax(redshift, mag)
@@ -31,6 +33,11 @@ def n_pass_wst_bg_bright(redshift,mag):
 def E_wst_bg_faint(redshift, mag):
     return 0.99 * np.ones_like(redshift) * (redshift <= 1)
 def n_pass_wst_bg_faint(redshift,mag):
+    n = np.ones(len(mag)) 
+    return n
+def E_wst_bg_grey(redshift, mag):
+    return 0.99 * np.ones_like(redshift) * (redshift <= 1)
+def n_pass_wst_bg_grey(redshift,mag):
     n = np.ones(len(mag)) 
     return n
 

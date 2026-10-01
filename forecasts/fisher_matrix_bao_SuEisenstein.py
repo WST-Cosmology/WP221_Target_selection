@@ -113,7 +113,7 @@ def sigma_Da_H_single_tracer(zarray,nz,bz,Area,N_degm2,Deltaz=0.2, cosmo=None, r
     #normalised the nz
     nz=nz/np.sum(nz)
     size_z=len(zarray)
-    
+    print(Nbin)
     for i in range(Nbin):
         imin,imax=i*int((size_z+eps)//Nbin),(i+1)*int((eps+size_z)//Nbin)
         nzsum=np.sum(nz[imin:imax])

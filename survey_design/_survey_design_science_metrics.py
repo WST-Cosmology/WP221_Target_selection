@@ -47,7 +47,7 @@ def run_forecast_one_tracer(z, zarray, nz, bz, S_survey, nspec_deg2, cosmo, whic
         list_zbin_bao, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff, Fisher_bao = fisher_matrix_bao_SuEisenstein.sigma_Da_H_single_tracer(z,
                                                                                                                     np.interp(z, zarray, nz),
                                                                                                                     np.interp(z, zarray, bz),
-                                                                                                                    S_survey,nspec_deg2,Deltaz=zarray[-1] - zarray[0],
+                                                                                                                    S_survey,nspec_deg2,Deltaz=0.2,#zarray[-1] - zarray[0],
                                                                                                                     cosmo=cosmo, return_fisher=True)
         results['bao'] = [ list_zbin_bao, list_sigma_Da,list_sigma_H, zeff, sigma_Da_eff, sigma_H_eff, Fisher_bao]
 
